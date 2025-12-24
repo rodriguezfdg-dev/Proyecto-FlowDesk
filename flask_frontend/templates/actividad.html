@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crear Nuevo Ticket - Flowdesk</title>
+
+    <script>
+        // Variables inyectadas por el backend
+        const CUSTOMER_CODE = '{{ customer_code | safe }}';
+        const USER_ROLL = '{{ user_roll | safe }}';
+        const API_BASE_URL = '{{ api_base_url | safe }}';
+        const ACCESS_TOKEN = '{{ access_token | safe }}';
+    </script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/toast.css') }}">
+    <script src="{{ url_for('static', filename='js/toast.js') }}"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #f5f5f5;
+            min-height: 100vh;
+        }
+
+        .gradient-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .content-card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            color: #374151;
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            background: white;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            outline: none;
+        }
+
+        .btn-logout {
+            background: white;
+            color: #667eea;
+            transition: all 0.2s ease;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-logout:hover {
+            background: rgba(255, 255, 255, 0.9);
+            transform: translateY(-1px);
+        }
+
+        .btn-cancel {
+            background: #f3f4f6;
+            color: #374151;
+            transition: all 0.2s ease;
+        }
+
+        .btn-cancel:hover {
+            background: #e5e7eb;
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transition: all 0.2s ease;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .autocomplete-items {
+            position: absolute;
+            border: 1px solid #e5e7eb;
+            z-index: 99;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            margin-top: 0.25rem;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .autocomplete-items div {
+            padding: 12px;
+            cursor: pointer;
+            background-color: white;
+            border-bottom: 1px solid #f3f4f6;
+            color: #374151;
+            transition: all 0.2s ease;
+        }
+
+        .autocomplete-items div:hover {
+            background: #f9fafb;
+        }
+
+        .autocomplete-active {
+            background: #f3f4f6 !important;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen">
+    <div id="app" class="min-h-screen">
+        <div id="toast-container"></div>
+
+        <div class="gradient-header py-8 px-6 mb-6">
+            <div class="w-full max-w-7xl mx-auto flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <button onclick="window.history.back()"
+                        class="text-white hover:text-gray-200 p-2 rounded-full transition duration-150">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                    </button>
+                    <div>
+                        <h1 class="text-3xl font-bold text-white">Crear Nuevo Ticket</h1>
+                        <p class="text-sm text-white text-opacity-90 mt-1">
+                            Registra un nuevo ticket en el sistema
+                        </p>
+                    </div>
+                </div>
+                <a href="{{ url_for('logout') }}"
+                    class="btn-logout flex items-center space-x-2 px-5 py-2.5 rounded-lg font-semibold">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Salir</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="w-full max-w-7xl mx-auto px-6 pb-6">
+            <main class="content-card p-8">
+                <form id="create-ticket-form">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-6">
+                            <div id="cliente-selector-container" style="display: none;">
+                                <label for="cliente-search" class="block text-sm font-semibold text-gray-700 mb-2">
+                                    Cliente <span class="text-red-500">*</span>
+                                </label>
+                                <div class="relative">
+                                    <input type="text" id="cliente-search" placeholder="Buscar cliente..."
+                                        class="form-input block w-full px-4 py-3 rounded-lg font-medium text-sm">
+                                    <input type="hidden" id="selected-cliente-id">
+                                    <div class="autocomplete-items" id="cliente-autocomplete"></div>
+                                </div>
+                            </div>
+
+                            <div id="module-selector-container" style="display: none;">
+                                <label for="module-select" class="block text-sm font-semibold text-gray-700 mb-2">
+                                    Módulo de Asignación <span class="text-red-500">*</span>
+                                </label>
+                                <select id="module-select" name="module-select"
+                                    class="form-select block w-full px-4 py-3 rounded-lg font-medium text-sm">
+                                    <option value="">Seleccione un módulo...</option>
+                                </select>
+                                <input type="hidden" id="selected-module-id">
+                            </div>
+
+                            <div id="user-assignment-container" style="display: none;">
+                                <label for="assigned-user" class="block text-sm font-semibold text-gray-700 mb-2">
+                                    Asignar a
+                                </label>
+                                <select id="assigned-user" name="assigned-user"
+                                    class="form-select block w-full px-4 py-3 rounded-lg font-medium text-sm">
+                                    <option value="">Sin asignar</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label for="titulo" class="block text-sm font-semibold text-gray-700 mb-2">
+                                    Título <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" id="titulo" name="titulo"
+                                    class="form-input block w-full px-4 py-3 rounded-lg font-medium text-sm"
+                                    placeholder="Ingrese el título del ticket" required>
+                            </div>
+
+                            <div>
+                                <label for="prioridad" class="block text-sm font-semibold text-gray-700 mb-2">
+                                    Prioridad <span class="text-red-500">*</span>
+                                </label>
+                                <select id="prioridad" name="prioridad"
+                                    class="form-select block w-full px-4 py-3 rounded-lg font-medium text-sm">
+                                    <option>Baja</option>
+                                    <option selected>Media</option>
+                                    <option>Alta</option>
+                                    <option>Crítica</option>
+                                </select>
+
+                            </div>
+
+                            <div class="flex items-center pt-2">
+                                <input type="checkbox" id="is_additional" name="is_additional"
+                                    class="h-5 w-5 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                <label for="is_additional" class="ml-3 block text-sm font-medium text-gray-700">
+                                    Es Ticket Adicional
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="space-y-6">
+                            <div>
+                                <label for="descripcion" class="block text-sm font-semibold text-gray-700 mb-2">
+                                    Descripción <span class="text-red-500">*</span>
+                                </label>
+                                <textarea id="descripcion" name="descripcion" rows="12"
+                                    class="form-textarea block w-full px-4 py-3 rounded-lg font-medium text-sm resize-none"
+                                    placeholder="Describa detalladamente el ticket..." required></textarea>
+                            </div>
+                        </div>
+
+                    </div>
+
+
+                    <div class="mt-6">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            Archivos Adjuntos
+                        </label>
+                        <div id="drop-zone"
+                            class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-indigo-500 transition-colors cursor-pointer bg-gray-50">
+                            <input type="file" id="file-input" multiple class="hidden" accept="*/*">
+                            <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-2"></i>
+                            <p class="text-sm text-gray-600">Arrastra archivos aquí o <span
+                                    class="text-indigo-600 font-semibold">haz clic
+                                    para seleccionar</span></p>
+                            <p class="text-xs text-gray-500 mt-1">Máximo 10MB por archivo
+                            </p>
+                        </div>
+
+                        <div id="file-list" class="mt-4 space-y-2">
+                        </div>
+                    </div>
+
+                    <div class="mt-8 pt-6 border-t border-gray-200 flex justify-end space-x-4">
+                        <button type="button" onclick="window.history.back()"
+                            class="btn-cancel px-6 py-3 rounded-lg font-semibold transition duration-150">
+                            Cancelar
+                        </button>
+                        <button type="submit"
+                            class="btn-submit px-8 py-3 rounded-lg font-semibold transition duration-150">
+                            <i class="fas fa-save mr-2"></i>Guardar Ticket
+                        </button>
+                    </div>
+        </div>
+        </form>
+
+        </main>
+
+    </div>
+
+    </div>
+
+
+    <script>
+        const token = ACCESS_TOKEN;
+        const api_base_url = API_BASE_URL;
+        const USER_IS_INTERNAL = USER_ROLL === '1' || USER_ROLL === '3' || USER_ROLL === '4';
+
+        let selectedClienteId = CUSTOMER_CODE; // Default for external users
+        let selectedClienteCode = CUSTOMER_CODE; // Default for external users
+
+        // NUEVAS VARIABLES GLOBALES PARA MODULOS
+        let currentClientModules = []; // Almacena los módulos del cliente
+        let selectedModuleID = null;   // Almacena el ID interno del módulo seleccionado/asignado
+
+        // Elementos de Módulo y Cliente
+        const moduleContainer = document.getElementById('module-selector-container');
+        const moduleSelect = document.getElementById('module-select');
+        const hiddenModuleId = document.getElementById('selected-module-id');
+        const clienteSearchInput = document.getElementById('cliente-search');
+        const clienteAutocomplete = document.getElementById('cliente-autocomplete');
+        const assignedUserSelect = document.getElementById('assigned-user');
+
+
+        // Show client selector and user assignment for admin/consultant/developer
+        if (USER_IS_INTERNAL) {
+            document.getElementById('cliente-selector-container').style.display = 'block';
+            document.getElementById('user-assignment-container').style.display = 'block';
+            selectedClienteId = null;
+            selectedClienteCode = null; // They must select a client/code
+        }
+
+
+        // --- FUNCIONES DE MÓDULO ---
+
+        async function loadClientModules(clientCode) {
+            if (!clientCode) return;
+
+            // 1. Resetear estado
+            moduleContainer.style.display = 'none';
+            moduleSelect.innerHTML = '<option value="">Cargando módulos...</option>';
+            moduleSelect.disabled = false;
+            selectedModuleID = null;
+            hiddenModuleId.value = '';
+
+            try {
+                // Obtener los módulos (boards) del cliente
+                const response = await fetch(`${api_base_url}/api/boards/?customer_code=${clientCode}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Error al cargar módulos del cliente.');
+
+                const modules = await response.json();
+                currentClientModules = modules;
+                moduleSelect.innerHTML = '<option value="">Seleccione un módulo...</option>';
+
+                if (modules.length > 1) {
+                    // Caso 1: Múltiples Módulos -> Mostrar selector
+                    moduleContainer.style.display = 'block';
+                    modules.forEach(mod => {
+                        const option = document.createElement('option');
+                        option.value = mod.internalId; // Usamos el ID interno del módulo/board
+                        option.textContent = mod.Name;
+                        moduleSelect.appendChild(option);
+                    });
+
+                    // Añadir listener para guardar el ID seleccionado por el usuario
+                    moduleSelect.onchange = () => {
+                        selectedModuleID = moduleSelect.value;
+                    };
+
+                } else if (modules.length === 1) {
+                    // Caso 2: Un solo Módulo -> Asignación directa
+                    const singleModule = modules[0];
+                    selectedModuleID = singleModule.internalId;
+                    hiddenModuleId.value = singleModule.internalId;
+
+                    moduleContainer.style.display = 'block';
+                    moduleSelect.innerHTML = `<option value="${singleModule.internalId}" selected>${singleModule.Name}</option>`;
+
+                    if (USER_IS_INTERNAL) {
+                        // Los roles internos pueden ver el campo, y si solo hay uno, se asigna y se deshabilita
+                        moduleSelect.disabled = true;
+                    } else {
+                        // Cliente final con un solo módulo, se asigna automáticamente, y se oculta para no confundir
+                        moduleContainer.style.display = 'none';
+                    }
+                    showToast(`Módulo asignado automáticamente a: ${singleModule.Name}`, 'info');
+
+                } else {
+                    // Caso 3: Cero Módulos
+                    moduleContainer.style.display = 'none'; // No se muestra si no hay módulos
+                    showToast('El cliente no tiene módulos configurados. El ticket no podrá ser enrutado.', 'warning');
+                }
+
+            } catch (error) {
+                console.error(error);
+                moduleSelect.innerHTML = '<option value="">Error al cargar módulos</option>';
+                showToast('Error al cargar la lista de módulos: ' + error.message, 'error');
+            }
+        }
+
+        // --- LÓGICA EXISTENTE ---
+
+        // Load users for assignment dropdown
+        async function loadAssignableUsers() {
+            if (!USER_IS_INTERNAL) return;
+
+            try {
+                const response = await fetch(`${api_base_url}/api/personas/`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Failed to fetch users');
+
+                const users = await response.json();
+                const assignableUsers = users.filter(user =>
+                    user.roll === '1' || user.roll === '3' || user.roll === '4'
+                );
+
+                assignedUserSelect.innerHTML = '<option value="">Sin asignar</option>'; // Limpiar antes de llenar
+                assignableUsers.forEach(user => {
+                    const option = document.createElement('option');
+                    option.value = user.id;
+                    option.textContent = user.user;
+                    assignedUserSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading users:', error);
+                showToast('Error al cargar usuarios', 'error');
+            }
+        }
+
+        // Load users on page load
+        if (USER_IS_INTERNAL) {
+            loadAssignableUsers();
+        }
+        // Note: Client final module loading is handled at DOMContentLoaded below
+
+
+        // Client autocomplete functionality
+        let clientSearchTimeout = null;
+
+        if (clienteSearchInput) {
+            clienteSearchInput.addEventListener('input', function () {
+                clearTimeout(clientSearchTimeout);
+                const query = this.value;
+
+                // Limpiar módulos si el cliente cambia
+                moduleContainer.style.display = 'none';
+                moduleSelect.innerHTML = '<option value="">Seleccione un módulo...</option>';
+                selectedModuleID = null;
+
+                if (query.length < 2) {
+                    clienteAutocomplete.innerHTML = '';
+                    return;
+                }
+
+                clientSearchTimeout = setTimeout(async () => {
+                    try {
+                        const response = await fetch(`${api_base_url}/api/clientes/search/?q=${encodeURIComponent(query)}`, {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+
+                        if (!response.ok) throw new Error('Failed to fetch clients');
+
+                        const clients = await response.json();
+                        clienteAutocomplete.innerHTML = '';
+
+                        if (clients.length === 0) {
+                            const noResults = document.createElement('div');
+                            noResults.textContent = 'No se encontraron clientes';
+                            noResults.style.cursor = 'default';
+                            clienteAutocomplete.appendChild(noResults);
+                            return;
+                        }
+
+                        clients.forEach(client => {
+                            const div = document.createElement('div');
+                            const clientName = client.nombre || client.razon_social;
+                            div.textContent = clientName;
+                            div.addEventListener('click', function () {
+                                clienteSearchInput.value = clientName;
+                                selectedClienteId = client.id;
+                                selectedClienteCode = client.code;
+                                document.getElementById('selected-cliente-id').value = client.id;
+                                clienteAutocomplete.innerHTML = '';
+
+                                // Cargar módulos
+                                loadClientModules(client.code);
+                            });
+                            clienteAutocomplete.appendChild(div);
+                        });
+                    } catch (error) {
+                        console.error('Error fetching clients:', error);
+                        showToast('Error al buscar clientes', 'error');
+                    }
+                }, 300);
+            });
+        }
+
+        // Close autocomplete when clicking outside
+        document.addEventListener('click', function (e) {
+            if (e.target !== clienteSearchInput) {
+                clienteAutocomplete.innerHTML = '';
+            }
+        });
+
+
+        // File upload functionality
+        let selectedFiles = [];
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const fileList = document.getElementById('file-list');
+        const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+        // Click to select files
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        // File input change
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        // Drag and drop
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('border-indigo-500', 'bg-indigo-50');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('border-indigo-500', 'bg-indigo-50');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-indigo-500', 'bg-indigo-50');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        function handleFiles(files) {
+            for (let file of files) {
+                if (file.size > MAX_FILE_SIZE) {
+                    showToast(`El archivo "${file.name}" excede el tamaño máximo de 10MB`, 'error');
+                    continue;
+                }
+                selectedFiles.push(file);
+            }
+            updateFileList();
+        }
+
+        function updateFileList() {
+            fileList.innerHTML = '';
+            selectedFiles.forEach((file, index) => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-lg';
+                fileItem.innerHTML = `
+          <div class="flex items-center space-x-3">
+            <i class="fas fa-file text-indigo-600"></i>
+            <div>
+              <p class="text-sm font-medium text-gray-700">${file.name}</p>
+              <p class="text-xs text-gray-500">${(file.size / 1024).toFixed(2)} KB</p>
+            </div>
+          </div>
+          <button type="button" onclick="removeFile(${index})" class="text-red-500 hover:text-red-700">
+            <i class="fas fa-times"></i>
+          </button>
+        `;
+                fileList.appendChild(fileItem);
+            });
+        }
+
+        window.removeFile = function (index) {
+            selectedFiles.splice(index, 1);
+            updateFileList();
+        };
+
+        // Form submission
+        document.getElementById('create-ticket-form').addEventListener('submit', async function (event) {
+            event.preventDefault();
+
+            const form = event.target;
+            const titulo = form.elements.titulo.value;
+            const prioridad = form.elements.prioridad.value;
+            const descripcion = form.elements.descripcion.value;
+            const finalCustomerCode = selectedClienteCode || CUSTOMER_CODE;
+
+            // 1. VALIDACIÓN DE CLIENTE (Solo para roles internos)
+            if (USER_IS_INTERNAL && !finalCustomerCode) {
+                showToast('Por favor, seleccione un cliente', 'error');
+                return;
+            }
+
+            // 2. VALIDACIÓN Y ASIGNACIÓN DE MÓDULO FINAL
+            let moduleToSubmit = selectedModuleID;
+
+            // Si el selector está visible (múltiples módulos para cualquier rol)
+            if (moduleContainer.style.display !== 'none' && !moduleSelect.value) {
+                showToast('Por favor, seleccione el Módulo de Asignación.', 'error');
+                return;
+            }
+
+            // Si el cliente NO tiene módulos, no se detiene aquí a menos que el backend lo rechace.
+            // La variable moduleToSubmit ya contiene el ID si fue asignado automáticamente (caso 2).
+
+            // ----------------------------------------------------
+
+
+            const fecha_creacion = new Date().toISOString().split('T')[0];
+
+            // Map frontend fields to backend expected fields
+            const ticketData = {
+                Name: titulo,
+                Comment: descripcion,
+                Priority: prioridad,
+                State: 'NUEVO', // Estado inicial
+                CustCode: finalCustomerCode,
+                Date: fecha_creacion,
+                AdditionalHoursStatus: form.elements.is_additional.checked ? 'Pendiente de Aprobacion' : null,
+                ModuleID: moduleToSubmit // Campo crítico de enrutamiento
+            };
+
+            // Add assigned user if selected (Lógica existente)
+            const assignedUser = document.getElementById('assigned-user');
+            if (assignedUser && assignedUser.value) {
+                const selectedOption = assignedUser.options[assignedUser.selectedIndex];
+                ticketData.assign = selectedOption.textContent;
+            }
+
+            if (!token) {
+                showToast('Error de autenticación. Por favor, inicie sesión de nuevo.', 'error');
+                return;
+            }
+
+            // Bloquear botón y preparar spinner
+            const submitButton = form.querySelector('.btn-submit');
+            const originalButtonContent = submitButton.innerHTML;
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Guardando...';
+
+            const apiUrl = `${api_base_url}/api/cards/`;
+
+            try {
+                // 3. CREAR TICKET (JSON POST)
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(ticketData),
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Error al crear el ticket.');
+                }
+
+                const data = await response.json();
+                const ticketId = data.internalId;
+
+                // 4. SUBIR ARCHIVOS (Multipart POST)
+                if (selectedFiles.length > 0) {
+                    try {
+                        const formData = new FormData();
+                        selectedFiles.forEach(file => {
+                            formData.append('files', file);
+                        });
+
+                        const uploadResponse = await fetch(`${api_base_url}/api/cards/${ticketId}/attachments`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: formData
+                        });
+
+                        if (!uploadResponse.ok) {
+                            throw new Error('Error al subir archivos');
+                        }
+
+                        showToast(`¡Ticket creado con éxito! ID: ${ticketId} (${selectedFiles.length} archivo(s) adjunto(s))`, 'success');
+                    } catch (uploadError) {
+                        console.error('Error uploading files:', uploadError);
+                        showToast(`Ticket creado (ID: ${ticketId}) pero hubo un error al subir archivos`, 'warning');
+                    }
+                } else {
+                    showToast('¡Ticket creado con éxito! ID: ' + ticketId, 'success');
+                }
+
+                // 5. LIMPIEZA Y REDIRECCIÓN
+                form.reset();
+                selectedFiles = [];
+                updateFileList();
+
+                // Resetear variables de módulo y cliente
+                selectedClienteId = USER_IS_INTERNAL ? null : CUSTOMER_CODE;
+                selectedClienteCode = USER_IS_INTERNAL ? null : CUSTOMER_CODE;
+                selectedModuleID = null;
+                currentClientModules = [];
+                moduleContainer.style.display = 'none';
+                if (clienteSearchInput) clienteSearchInput.value = '';
+                if (assignedUserSelect) assignedUserSelect.value = '';
+
+                // Redirect to tickets page after 2 seconds
+                setTimeout(() => {
+                    window.location.href = "{{ url_for('desk') }}";
+                }, 2000);
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Error al crear el ticket: ' + error.message, 'error');
+            } finally {
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalButtonContent;
+            }
+        });
+
+        // Asegurarse de que los clientes finales carguen sus módulos al inicio
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!USER_IS_INTERNAL && CUSTOMER_CODE) {
+                loadClientModules(CUSTOMER_CODE);
+            }
+        });
+    </script>
+</body>
+
+</html>

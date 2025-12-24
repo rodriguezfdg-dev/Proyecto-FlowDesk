@@ -1,0 +1,711 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tablero de Tickets - Flowdesk</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/toast.css') }}">
+    <script src="{{ url_for('static', filename='js/toast.js') }}"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            overflow-y: hidden;
+            overflow-x: auto;
+            height: 100vh;
+            width: 100vw;
+            color: #fff;
+        }
+
+        @keyframes gradient {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        #app {
+            height: 100%;
+            display: flex;
+            width: fit-content;
+            min-width: 100%;
+        }
+
+        #main-content {
+            flex-grow: 1;
+            min-width: calc(100vw - 16rem);
+        }
+
+        main {
+            overflow-x: scroll;
+            overflow-y: hidden;
+            height: 100%;
+        }
+
+        /* Glassmorphism */
+        .glass-header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .glass-sidebar {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .glass-column {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1rem;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 0.75rem;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .search-input {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.2s ease;
+            color: white;
+        }
+
+        .search-input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .search-input:focus {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            outline: none;
+        }
+
+        /* Priority Colors */
+        .priority-critica {
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            color: white;
+        }
+
+        .priority-alta {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+        }
+
+        .priority-media {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+        }
+
+        .priority-baja {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        /* Scrollbars */
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 12px;
+            width: 12px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .kanban-column-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .kanban-column-content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .kanban-column-content::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+        }
+
+        .kanban-column-content::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+    </style>
+</head>
+
+<body class="text-gray-800">
+    <div id="app" class="h-full flex">
+        <aside id="sidebar"
+            class="glass-sidebar fixed top-0 left-0 h-full w-64 flex flex-col shadow-2xl z-20 transition-all duration-300">
+            <div class="h-20 flex items-center px-8 border-b border-white/10">
+                <div class="text-3xl font-bold text-white tracking-tight">
+                    Flow<span class="text-indigo-200">desk</span>
+                </div>
+            </div>
+
+            <nav class="flex-1 overflow-y-auto py-6 px-4 space-y-2 custom-scrollbar">
+                <a href="{{ url_for('desk') }}"
+                    class="flex items-center px-4 py-3 rounded-xl text-white/80 hover:bg-white/10 hover:text-white transition-all group">
+                    <i class="fas fa-columns w-6 text-center group-hover:scale-110 transition-transform"></i>
+                    <span class="ml-3 font-medium">Tickets</span>
+                </a>
+                <a href="{{ url_for('mis_actividades') }}"
+                    class="flex items-center px-4 py-3 rounded-xl text-white/80 hover:bg-white/10 hover:text-white transition-all group">
+                    <i class="fas fa-tasks w-6 text-center group-hover:scale-110 transition-transform"></i>
+                    <span class="ml-3 font-medium">Mis Actividades</span>
+                </a>
+                <a href="{{ url_for('clientes_new') }}"
+                    class="flex items-center px-4 py-3 rounded-xl text-white/80 hover:bg-white/10 hover:text-white transition-all group">
+                    <i class="fas fa-users w-6 text-center group-hover:scale-110 transition-transform"></i>
+                    <span class="ml-3 font-medium">Usuarios</span>
+                </a>
+                <a href="{{ url_for('empresas') }}"
+                    class="flex items-center px-4 py-3 rounded-xl text-white/80 hover:bg-white/10 hover:text-white transition-all group">
+                    <i class="fas fa-building w-6 text-center group-hover:scale-110 transition-transform"></i>
+                    <span class="ml-3 font-medium">Clientes</span>
+                </a>
+                <a href="{{ url_for('actividad') }}"
+                    class="flex items-center px-4 py-3 rounded-xl text-white/80 hover:bg-white/10 hover:text-white transition-all group">
+                    <i class="fas fa-plus-circle w-6 text-center group-hover:scale-110 transition-transform"></i>
+                    <span class="ml-3 font-medium">Crear Ticket</span>
+                </a>
+                <a href="{{ url_for('reports') }}"
+                    class="flex items-center px-4 py-3 rounded-xl text-white/80 hover:bg-white/10 hover:text-white transition-all group">
+                    <i class="fas fa-chart-line w-6 text-center group-hover:scale-110 transition-transform"></i>
+                    <span class="ml-3 font-medium">Reportes</span>
+                </a>
+                <a href="{{ url_for('settings') }}"
+                    class="flex items-center px-4 py-3 rounded-xl text-white/80 hover:bg-white/10 hover:text-white transition-all group">
+                    <i class="fas fa-cog w-6 text-center group-hover:scale-110 transition-transform"></i>
+                    <span class="ml-3 font-medium">Ajustes</span>
+                </a>
+            </nav>
+
+            <div class="p-6 border-t border-white/10 bg-black/10">
+                <div id="sidebar-footer-content"
+                    class="h-10 flex items-center justify-center transition-opacity duration-500">
+                    <span class="text-lg font-bold text-white/60 tracking-wider">Flowdesk</span>
+                </div>
+            </div>
+        </aside>
+
+        <div id="main-content" class="flex-grow ml-64 flex flex-col h-full relative z-10">
+            <div id="toast-container"></div>
+
+            <header class="glass-header px-8 py-4 flex justify-between items-center sticky top-0 z-30 shrink-0">
+                <div class="flex items-center space-x-6 flex-1">
+                    <h1 class="text-2xl font-bold text-white drop-shadow-md">Tablero de Tickets</h1>
+                    <div class="relative w-full max-w-md">
+                        <input type="text" id="search-input" placeholder="Buscar ticket..."
+                            class="search-input w-full pl-10 pr-4 py-2.5 rounded-xl text-sm font-medium focus:outline-none">
+                        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-white/60"></i>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button onclick="fetchCards()"
+                        class="p-2.5 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all"
+                        title="Actualizar">
+                        <i class="fas fa-sync-alt text-lg"></i>
+                    </button>
+                    <a href="{{ url_for('logout') }}"
+                        class="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-red-500/20 hover:bg-red-500/40 border border-red-500/30 rounded-lg transition-colors">
+                        <span>Salir</span>
+                        <i class="fas fa-sign-out-alt"></i>
+                    </a>
+                </div>
+            </header>
+
+            <main class="flex-grow overflow-x-scroll overflow-y-hidden p-6 custom-scrollbar">
+                <div id="kanban-board" class="flex space-x-6 h-full min-w-max pb-4">
+                    <div class="glass-column w-72 shrink-0">
+                        <div class="p-3 border-b border-white/10 flex justify-between items-center shrink-0">
+                            <span class="font-bold text-white">Nuevo</span>
+                            <span
+                                class="bg-white/20 text-white text-xs font-bold px-2.5 py-1 rounded-full count-badge">0</span>
+                        </div>
+                        <div class="kanban-column-content flex-1 overflow-y-auto p-3 space-y-3" id="col-Nuevo"></div>
+                    </div>
+
+                    <div class="glass-column w-72 shrink-0">
+                        <div class="p-3 border-b border-white/10 flex justify-between items-center shrink-0">
+                            <span class="font-bold text-white">Pendiente</span>
+                            <span
+                                class="bg-white/20 text-white text-xs font-bold px-2.5 py-1 rounded-full count-badge">0</span>
+                        </div>
+                        <div class="kanban-column-content flex-1 overflow-y-auto p-3 space-y-3" id="col-Pendiente">
+                        </div>
+                    </div>
+
+                    <div class="glass-column w-72 shrink-0">
+                        <div class="p-3 border-b border-white/10 flex justify-between items-center shrink-0">
+                            <span class="font-bold text-white">En proceso</span>
+                            <span
+                                class="bg-white/20 text-white text-xs font-bold px-2.5 py-1 rounded-full count-badge">0</span>
+                        </div>
+                        <div class="kanban-column-content flex-1 overflow-y-auto p-3 space-y-3" id="col-En proceso">
+                        </div>
+                    </div>
+
+                    <div class="glass-column w-72 shrink-0">
+                        <div class="p-3 border-b border-white/10 flex justify-between items-center shrink-0">
+                            <span class="font-bold text-white">En pruebas</span>
+                            <span
+                                class="bg-white/20 text-white text-xs font-bold px-2.5 py-1 rounded-full count-badge">0</span>
+                        </div>
+                        <div class="kanban-column-content flex-1 overflow-y-auto p-3 space-y-3" id="col-En pruebas">
+                        </div>
+                    </div>
+
+                    <div class="glass-column w-72 shrink-0">
+                        <div class="p-3 border-b border-white/10 flex justify-between items-center shrink-0">
+                            <span class="font-bold text-white">Esperando respuesta</span>
+                            <span
+                                class="bg-white/20 text-white text-xs font-bold px-2.5 py-1 rounded-full count-badge">0</span>
+                        </div>
+                        <div class="kanban-column-content flex-1 overflow-y-auto p-3 space-y-3"
+                            id="col-Esperando respuesta"></div>
+                    </div>
+
+                    <div class="glass-column w-72 shrink-0">
+                        <div class="p-3 border-b border-white/10 flex justify-between items-center shrink-0">
+                            <span class="font-bold text-white">Cerrado</span>
+                            <span
+                                class="bg-white/20 text-white text-xs font-bold px-2.5 py-1 rounded-full count-badge">0</span>
+                        </div>
+                        <div class="kanban-column-content flex-1 overflow-y-auto p-3 space-y-3" id="col-Cerrado"></div>
+                    </div>
+                </div>
+            </main>
+
+            <script>
+                const api_base_url = '{{ api_base_url | safe }}';
+                const token = '{{ access_token | safe }}';
+                const cliente_code = '{{ cliente_code | safe }}';
+
+                // Lógica de Auto-Refresco
+                let lastFetchTime = 0;
+                const REFRESH_INTERVAL = 5000; // 5 segundos
+
+                function handleWindowFocus() {
+                    const currentTime = Date.now();
+                    // Solo recarga si han pasado más de 5 segundos desde la última recarga.
+                    if (currentTime - lastFetchTime > REFRESH_INTERVAL) {
+                        fetchCards();
+                    }
+                }
+                window.addEventListener('focus', handleWindowFocus);
+
+
+                // Sidebar Footer Animation
+                document.addEventListener('DOMContentLoaded', function () {
+                    const footerContent = document.getElementById('sidebar-footer-content');
+                    if (!footerContent) return;
+
+                    const items = [
+                        '<span class="text-lg font-bold text-white/60 tracking-wider">Flowdesk</span>',
+                        '<img src="{{ url_for("static", filename="img/innova_logo.png") }}" alt="Innova" class="h-8 object-contain opacity-60">',
+                        '<img src="{{ url_for("static", filename="img/sap_logo.png") }}" alt="SAP" class="h-8 object-contain opacity-60">',
+                        '<img src="{{ url_for("static", filename="img/odoo_logo.png") }}" alt="Odoo" class="h-8 object-contain opacity-60">',
+                        '<img src="{{ url_for("static", filename="img/hexagon_logo.png") }}" alt="Hexagon" class="h-8 object-contain opacity-60">'
+                    ];
+
+                    let currentIndex = 0;
+                    setInterval(() => {
+                        footerContent.style.opacity = '0';
+                        setTimeout(() => {
+                            currentIndex = (currentIndex + 1) % items.length;
+                            footerContent.innerHTML = items[currentIndex];
+                            footerContent.style.opacity = '1';
+                        }, 500);
+                    }, 3000);
+                });
+
+                // CAMBIO 1: Mapeo de estados actualizado
+                // Mapeo de códigos DB a nombres de columnas (para DISPLAY)
+                // Maneja tanto códigos legacy (PEND) como nombres completos (Pendiente)
+                const DB_TO_COLUMN = {
+                    'NUEVO': 'Nuevo',
+                    'Nuevo': 'Nuevo',
+                    'PEND': 'Pendiente',
+                    'Pendiente': 'Pendiente',
+                    'ENPROCESO': 'En proceso',
+                    'En proceso': 'En proceso',
+                    'ENPRUEBAS': 'En pruebas',
+                    'En pruebas': 'En pruebas',
+                    'PENDAPROBUSUARIO': 'Esperando respuesta',
+                    'Esperando respuesta': 'Esperando respuesta',
+                    'CERRADO': 'Cerrado',
+                    'Cerrado': 'Cerrado'
+                };
+
+                // Mapeo de nombres de columnas a estados DB (para ENVIAR AL BACKEND)
+                // IMPORTANTE: Ahora envía nombres completos ('Pendiente') en lugar de códigos cortos ('PEND').
+                const COLUMN_TO_DB = {
+                    'Nuevo': 'Nuevo',
+                    'Pendiente': 'Pendiente',
+                    'En proceso': 'En proceso',
+                    'En pruebas': 'En pruebas',
+                    'Esperando respuesta': 'Esperando respuesta',
+                    'Cerrado': 'Cerrado'
+                };
+
+                async function fetchCards() {
+                    try {
+                        let url = `${api_base_url}/api/cards/`;
+                        if (cliente_code && cliente_code !== 'None') {
+                            url += `?CustCode=${cliente_code}`;
+                        }
+
+                        const response = await fetch(url, {
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Error al cargar tickets');
+                        }
+
+                        const cards = await response.json();
+                        renderBoard(cards);
+
+                        // Importante: Actualiza el tiempo después de una carga exitosa
+                        lastFetchTime = Date.now();
+                    } catch (error) {
+                        console.error('Error:', error);
+                        showToast('No se pudieron cargar los tickets. Por favor, intenta de nuevo.', 'error');
+                    }
+                }
+
+                function renderBoard(cards) {
+                    document.querySelectorAll('.kanban-column-content').forEach(col => col.innerHTML = '');
+                    document.querySelectorAll('.count-badge').forEach(badge => badge.textContent = '0');
+
+                    const counts = {};
+
+                    cards.forEach(card => {
+                        // CAMBIO 2: Actualización de la lógica de renderBoard
+                        const dbState = card.State || 'Nuevo';
+
+                        // Intentar mapeo directo primero (para nombres completos como "Pendiente")
+                        let normalizedState = DB_TO_COLUMN[dbState];
+
+                        // Si no encuentra, intentar en mayúsculas (para códigos legacy como "PEND")
+                        if (!normalizedState) {
+                            normalizedState = DB_TO_COLUMN[dbState.toUpperCase()];
+                        }
+
+                        // Fallback a "Nuevo" si no se encuentra
+                        normalizedState = normalizedState || 'Nuevo';
+
+                        let colId = `col-${normalizedState}`;
+                        const column = document.getElementById(colId);
+
+                        if (column) {
+                            const cardEl = createCardElement(card);
+                            column.appendChild(cardEl);
+                            counts[colId] = (counts[colId] || 0) + 1;
+                        } else {
+                            console.warn(`Unknown DB state: ${dbState} for card ${card.internalId}. Falling back to 'Nuevo'.`);
+                            const fallbackCol = document.getElementById('col-Nuevo');
+                            if (fallbackCol) {
+                                const cardEl = createCardElement(card);
+                                fallbackCol.appendChild(cardEl);
+                                counts['col-Nuevo'] = (counts['col-Nuevo'] || 0) + 1;
+                            }
+                        }
+                    });
+
+                    for (const [colId, count] of Object.entries(counts)) {
+                        const columnDiv = document.getElementById(colId);
+                        if (columnDiv) {
+                            const header = columnDiv.previousElementSibling;
+                            if (header) {
+                                header.querySelector('.count-badge').textContent = count;
+                            }
+                        }
+                    }
+                }
+
+                function createCardElement(card) {
+                    const div = document.createElement('div');
+                    div.className = 'glass-card rounded-xl p-3 cursor-pointer group';
+                    div.setAttribute('draggable', 'true');
+                    div.setAttribute('data-ticket-id', card.internalId);
+
+                    div.addEventListener('dragstart', handleDragStart);
+                    div.addEventListener('dragend', handleDragEnd);
+
+                    div.onclick = (e) => {
+                        // Asegura que no se navegue si la tarjeta estaba siendo arrastrada (opacidad 50)
+                        if (div.classList.contains('opacity-50')) return;
+                        window.location.href = `/actividad?id=${card.internalId}`;
+                    };
+
+                    const priorityClass = getPriorityClass(card.Priority);
+                    const clientName = card.CustName || 'Sin Cliente';
+                    const assignee = card.assign || 'Sin asignar';
+                    const title = `#${card.internalId} - ${card.Name || 'Sin título'}`;
+                    const dateDisplay = card.Date ? new Date(card.Date).toLocaleDateString() : '';
+
+                    div.innerHTML = `
+                        <div class="font-semibold text-sm text-gray-800 mb-1 line-clamp-2 leading-snug group-hover:text-indigo-600 transition-colors">${title}</div>
+                        <div class="text-xs text-gray-500 mb-2 truncate flex items-center" title="${clientName}">
+                            <i class="fas fa-building mr-1.5 text-gray-400"></i> ${clientName}
+                        </div>
+                        <div class="flex justify-between items-center mt-auto">
+                            <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md ${priorityClass}">${card.Priority || 'Baja'}</span>
+                            <div class="flex items-center" title="Asignado a: ${assignee}">
+                                <div class="w-6 h-6 rounded-lg bg-indigo-100 flex items-center justify-center text-xs text-indigo-700 font-bold mr-2 shadow-sm">
+                                    ${assignee.charAt(0).toUpperCase()}
+                                </div>
+                                <span class="text-xs text-gray-500 font-medium truncate max-w-[80px]">${assignee}</span>
+                            </div>
+                        </div>
+                        <div class="mt-2 pt-2 border-t border-gray-200/50 flex justify-between items-center text-[10px] text-gray-400 font-medium">
+                            <span>ID: ${card.internalId}</span>
+                            <span>${dateDisplay}</span>
+                        </div>
+                    `;
+                    return div;
+                }
+
+                function getPriorityClass(priority) {
+                    if (!priority) return 'priority-baja';
+                    const p = priority.toLowerCase();
+                    if (p.includes('alta')) return 'priority-alta';
+                    if (p.includes('crítica') || p.includes('critica')) return 'priority-critica';
+                    if (p.includes('media')) return 'priority-media';
+                    return 'priority-baja';
+                }
+
+                // Search filter
+                document.getElementById('search-input').addEventListener('keyup', function (e) {
+                    const term = e.target.value.toLowerCase();
+                    document.querySelectorAll('.glass-card').forEach(card => {
+                        const title = card.querySelector('.font-semibold').textContent.toLowerCase();
+                        const client = card.querySelector('.text-xs.text-gray-500').textContent.toLowerCase();
+                        if (title.includes(term) || client.includes(term)) {
+                            card.style.display = 'block';
+                        } else {
+                            card.style.display = 'none';
+                        }
+                    });
+                });
+
+                // Drag & Drop Logic
+                let draggedCardId = null;
+
+                function handleDragStart(e) {
+                    draggedCardId = e.target.getAttribute('data-ticket-id');
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', draggedCardId);
+                    e.target.classList.add('opacity-50');
+                }
+
+                function handleDragEnd(e) {
+                    e.target.classList.remove('opacity-50');
+                    document.querySelectorAll('.glass-column').forEach(col => {
+                        col.classList.remove('bg-white/20', 'border-white/40');
+                    });
+                }
+
+                function handleDragEnter(e) {
+                    e.preventDefault();
+                    const dropZone = e.target.closest('.kanban-column-content');
+                    if (dropZone) {
+                        const column = dropZone.closest('.glass-column');
+                        column.classList.add('bg-white/20', 'border-white/40');
+                    }
+                }
+
+                function handleDragOver(e) {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                }
+
+                function handleDragLeave(e) {
+                    // Evita que el 'dragleave' se dispare al moverse dentro de los hijos del contenedor
+                    if (!e.relatedTarget || !e.currentTarget.contains(e.relatedTarget)) {
+                        const column = e.currentTarget.closest('.glass-column');
+                        if (column) {
+                            column.classList.remove('bg-white/20', 'border-white/40');
+                        }
+                    }
+                }
+
+                async function handleDrop(e) {
+                    e.preventDefault();
+                    const contentDiv = e.target.closest('.kanban-column-content');
+                    if (!contentDiv) return;
+
+                    // Limpiar estilos de arrastre
+                    const column = contentDiv.closest('.glass-column');
+                    column.classList.remove('bg-white/20', 'border-white/40');
+
+                    if (!draggedCardId) {
+                        draggedCardId = e.dataTransfer.getData('text/plain');
+                    }
+
+                    if (draggedCardId) {
+                        const card = document.querySelector(`[data-ticket-id="${draggedCardId}"]`);
+                        if (!card) return;
+
+                        // 1. OBTENER ESTADOS DE ORIGEN Y DESTINO
+                        const targetStateId = contentDiv.id.replace('col-', '');
+                        const sourceContentDiv = card.parentNode; // Asume que el padre es la columna de contenido
+                        const sourceStateId = sourceContentDiv ? sourceContentDiv.id.replace('col-', '') : null;
+
+                        // 2. CORRECCIÓN PRINCIPAL: Si la columna de destino es la misma, cancelamos la solicitud.
+                        if (targetStateId === sourceStateId) {
+                            card.classList.remove('opacity-50');
+                            draggedCardId = null;
+                            showToast(`El ticket #${card.getAttribute('data-ticket-id')} ya se encuentra en ${targetStateId}.`, 'warning');
+
+                            // Si la tarjeta se movió físicamente, debemos revertirla a su posición original
+                            if (sourceContentDiv !== contentDiv) {
+                                sourceContentDiv.appendChild(card);
+                                updateColumnCounts();
+                            }
+                            return; // Detiene la ejecución aquí.
+                        }
+
+                        // Si son diferentes, procedemos a la actualización
+                        const dbState = COLUMN_TO_DB[targetStateId]; // AHORA ES EL NOMBRE COMPLETO
+
+                        if (!dbState) {
+                            showToast(`Estado desconocido para la columna: ${targetStateId}`, 'warning');
+                            return;
+                        }
+
+                        // 3. Mover la tarjeta en el DOM y actualizar contadores
+                        contentDiv.appendChild(card);
+                        updateColumnCounts();
+
+                        try {
+                            // 4. Actualizar el estado en el servidor (usando el key 'State')
+                            const success = await updateTicketStatus(draggedCardId, dbState);
+                            if (!success) {
+                                showToast('Error al actualizar estado en el servidor. Revertiendo...', 'error');
+                                fetchCards(); // Recarga para revertir el estado
+                            } else {
+                                showToast(`Ticket #${draggedCardId} movido a ${targetStateId}`, 'success');
+                            }
+                        } catch (error) {
+                            console.error('Drop error:', error);
+                            showToast('Error de red al actualizar ticket. Revertiendo...', 'error');
+                            fetchCards(); // Recarga para revertir el estado
+                        }
+                    }
+                    draggedCardId = null;
+                }
+
+                async function updateTicketStatus(ticketId, newState) {
+                    console.log(`Intentando actualizar ticket ${ticketId} al estado DB: ${newState}`);
+                    try {
+                        const response = await fetch(`${api_base_url}/api/cards/${ticketId}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            // EL KEY 'State' ES CRUCIAL AQUÍ.
+                            body: JSON.stringify({ State: newState })
+                        });
+
+                        if (!response.ok) {
+                            // Intentamos leer el cuerpo del error para obtener el detalle específico
+                            let errorDetail = `Failed to update ticket status: ${response.status}`;
+
+                            try {
+                                const errorBody = await response.json();
+                                errorDetail = errorBody.message || errorBody.error || JSON.stringify(errorBody);
+                            } catch (e) {
+                                errorDetail += ` (No se pudo leer el cuerpo del error como JSON)`;
+                            }
+
+                            // Mostramos el error detallado usando el toast
+                            showToast(`ERROR 400. Revisa consola. Detalle: ${errorDetail}`, 'error');
+
+                            // Lanzamos el error para que handleDrop revierta el movimiento
+                            throw new Error(errorDetail);
+                        }
+
+                        // Si la respuesta es OK
+                        const result = await response.json();
+                        return result.success || true;
+
+                    } catch (error) {
+                        console.error('Update status error (catch):', error);
+                        return false;
+                    }
+                }
+
+                function updateColumnCounts() {
+                    document.querySelectorAll('.glass-column').forEach(col => {
+                        const count = col.querySelectorAll('.glass-card').length;
+                        const badge = col.querySelector('.count-badge');
+                        if (badge) badge.textContent = count;
+                    });
+                }
+
+                // EJECUCIÓN AL CARGAR LA PÁGINA (Punto de activación D&D)
+                document.addEventListener('DOMContentLoaded', () => {
+                    fetchCards(); // Carga inicial de tickets
+
+                    // ASIGNACIÓN DE EVENTOS D&D A LAS ZONAS DE SOLTADO (Contenedores de columna)
+                    document.querySelectorAll('.kanban-column-content').forEach(contentDiv => {
+                        contentDiv.addEventListener('dragenter', handleDragEnter);
+                        contentDiv.addEventListener('dragover', handleDragOver);
+                        contentDiv.addEventListener('dragleave', handleDragLeave);
+                        contentDiv.addEventListener('drop', handleDrop);
+                    });
+                });
+            </script>
+        </div>
+    </div>
+</body>
+
+</html>

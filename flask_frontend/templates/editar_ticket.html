@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Ticket</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/toast.css') }}">
+    <script src="{{ url_for('static', filename='js/toast.js') }}"></script>
+</head>
+
+<body class="bg-gray-100">
+    <div id="app" class="min-h-screen flex">
+        <!-- Sidebar -->
+        <!-- Sidebar -->
+        <!-- Sidebar -->
+        <!-- Sidebar -->
+        <aside id="sidebar"
+            class="fixed top-0 left-0 h-full bg-gray-800 text-white p-4 flex flex-col shadow-2xl z-20 w-64">
+            <div class="text-2xl font-extrabold text-indigo-400 mb-8 border-b border-gray-700 pb-3">
+                <span class="text-white">Flow</span>desk
+            </div>
+            <nav class="space-y-2">
+                <a href="{{ url_for('desk') }}"
+                    class="flex items-center space-x-3 p-3 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white transition duration-150">
+                    <i class="fas fa-columns w-5 text-center"></i>
+                    <span>Tickets</span>
+                </a>
+                <a href="{{ url_for('mis_actividades') }}"
+                    class="flex items-center space-x-3 p-3 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white transition duration-150">
+                    <i class="fas fa-tasks w-5 text-center"></i>
+                    <span>Mis Actividades</span>
+                </a>
+                <a href="{{ url_for('clientes_new') }}"
+                    class="flex items-center space-x-3 p-3 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white transition duration-150">
+                    <i class="fas fa-users w-5 text-center"></i>
+                    <span>Usuarios</span>
+                </a>
+                <a href="{{ url_for('empresas') }}"
+                    class="flex items-center space-x-3 p-3 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white transition duration-150">
+                    <i class="fas fa-building w-5 text-center"></i>
+                    <span>Clientes</span>
+                </a>
+                <a href="{{ url_for('actividad') }}"
+                    class="flex items-center space-x-3 p-3 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white transition duration-150">
+                    <i class="fas fa-plus-circle w-5 text-center"></i>
+                    <span>Crear Ticket</span>
+                </a>
+                <a href="{{ url_for('reports') }}"
+                    class="flex items-center space-x-3 p-3 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white transition duration-150">
+                    <i class="fas fa-chart-line w-5 text-center"></i>
+                    <span>Reportes</span>
+                </a>
+                <a href="{{ url_for('settings') }}"
+                    class="flex items-center space-x-3 p-3 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white transition duration-150">
+                    <i class="fas fa-cog w-5 text-center"></i>
+                    <span>Ajustes</span>
+                </a>
+            </nav>
+
+            <!-- Animated Footer -->
+            <div class="mt-auto pt-4 border-t border-gray-700 relative h-16 overflow-hidden">
+                <!-- Content Container -->
+                <div id="sidebar-footer-content"
+                    class="absolute inset-0 flex items-center justify-center transition-opacity duration-500 ease-in-out">
+                    <!-- Initial Content: Text -->
+                    <span class="text-xl font-bold text-indigo-400 tracking-wider">Flowdesk</span>
+                </div>
+            </div>
+
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    const footerContent = document.getElementById('sidebar-footer-content');
+                    if (!footerContent) return;
+
+                    const items = [
+                        '<span class="text-xl font-bold text-indigo-400 tracking-wider">Flowdesk</span>',
+                        '<img src="{{ url_for("static", filename="img/innova_logo.png") }}" alt="Innova" class="h-10 object-contain">',
+                        '<img src="{{ url_for("static", filename="img/sap_logo.png") }}" alt="SAP" class="h-10 object-contain">',
+                        '<img src="{{ url_for("static", filename="img/odoo_logo.png") }}" alt="Odoo" class="h-10 object-contain">',
+                        '<img src="{{ url_for("static", filename="img/hexagon_logo.png") }}" alt="Hexagon" class="h-10 object-contain">'
+                    ];
+
+                    let currentIndex = 0;
+
+                    setInterval(() => {
+                        // Fade out
+                        footerContent.style.opacity = '0';
+
+                        setTimeout(() => {
+                            // Update index and content
+                            currentIndex = (currentIndex + 1) % items.length;
+                            footerContent.innerHTML = items[currentIndex];
+
+                            // Fade in
+                            footerContent.style.opacity = '1';
+                        }, 500); // Wait for fade out to complete
+                    }, 3000); // Toggle every 3 seconds
+                });
+            </script>
+        </aside>
+
+        <!-- Main Content -->
+        <div id="main-content" class="flex-grow ml-64 p-6">
+            <!-- Toast Notification Container -->
+            <div id="toast-container"></div>
+
+            <header class="bg-white shadow-sm p-4 border-b rounded-t-lg">
+                <h1 class="text-2xl font-semibold text-gray-800">Editar Ticket <span id="ticket-id-header"
+                        class="text-indigo-600"></span></h1>
+            </header>
+
+            <main class="bg-white p-6 rounded-b-lg shadow-lg">
+                <form id="edit-ticket-form">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Left Column -->
+                        <div class="space-y-4">
+                            <div>
+                                <label for="titulo" class="block text-sm font-medium text-gray-700">Título</label>
+                                <input type="text" id="titulo" name="titulo"
+                                    class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    required>
+                            </div>
+                            <div>
+                                <label for="prioridad" class="block text-sm font-medium text-gray-700">Prioridad</label>
+                                <select id="prioridad" name="prioridad"
+                                    class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                                    <option>Baja</option>
+                                    <option>Media</option>
+                                    <option>Alta</option>
+                                    <option>Crítica</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="estado" class="block text-sm font-medium text-gray-700">Estado</label>
+                                <select id="estado" name="estado"
+                                    class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                                    <option>Nuevo</option>
+                                    <option>Pendiente</option>
+                                    <option>En proceso</option>
+                                    <option>En pruebas</option>
+                                    <option>Cerrado</option>
+                                    <option>Esperando respuesta</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Right Column -->
+                        <div class="space-y-4">
+                            <div>
+                                <label for="descripcion"
+                                    class="block text-sm font-medium text-gray-700">Descripción</label>
+                                <textarea id="descripcion" name="descripcion" rows="8"
+                                    class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    required></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="mt-8 pt-6 border-t border-gray-200 flex justify-end space-x-4">
+                        <button type="button" onclick="window.history.back()"
+                            class="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition duration-150">Cancelar</button>
+                        <button type="submit"
+                            class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition duration-150">Guardar
+                            Cambios</button>
+                    </div>
+                </form>
+            </main>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', async function () {
+            const api_base_url = '{{ api_base_url | safe }}';
+            const token = '{{ access_token | safe }}';
+            const urlParams = new URLSearchParams(window.location.search);
+            const ticketId = urlParams.get('id');
+            const form = document.getElementById('edit-ticket-form');
+
+            if (!ticketId) {
+                showToast('Error: No se ha especificado un ID de ticket.', 'error');
+                return;
+            }
+
+            document.getElementById('ticket-id-header').textContent = `#${ticketId}`;
+
+            // Fetch existing data to populate the form
+            try {
+                const response = await fetch(`${api_base_url}/api/cards/${ticketId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (!response.ok) {
+                    throw new Error('No se pudo cargar la información del ticket.');
+                }
+                const ticket = await response.json();
+
+                form.elements.titulo.value = ticket.titulo || '';
+                form.elements.descripcion.value = ticket.descripcion || '';
+                form.elements.prioridad.value = ticket.prioridad || 'Baja';
+                form.elements.estado.value = ticket.estado || 'Nuevo';
+
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+
+            // Handle form submission
+            form.addEventListener('submit', async function (event) {
+                event.preventDefault();
+
+                const updatedData = {
+                    titulo: form.elements.titulo.value,
+                    descripcion: form.elements.descripcion.value,
+                    prioridad: form.elements.prioridad.value,
+                    estado: form.elements.estado.value,
+                };
+
+                try {
+                    const response = await fetch(`${api_base_url}/api/cards/${ticketId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify(updatedData)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Error al actualizar el ticket.');
+                    }
+
+                    showToast('¡Ticket actualizado con éxito!', 'success');
+                    window.location.href = `/actividad?id=${ticketId}`; // Redirect back to details view
+
+                } catch (error) {
+                    showToast(error.message, 'error');
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

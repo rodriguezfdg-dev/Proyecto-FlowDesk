@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal de Cliente - Flowdesk</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            height: 100vh;
+            overflow: hidden;
+            color: #1f2937;
+            display: flex;
+            flex-direction: column;
+        }
+
+        @keyframes gradient {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Kanban Board Styles */
+        .board-container {
+            flex: 1;
+            overflow-x: auto;
+            overflow-y: hidden;
+            white-space: nowrap;
+            padding: 20px;
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .kanban-column {
+            background: #ebecf0;
+            min-width: 300px;
+            max-width: 300px;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            max-height: 100%;
+            padding: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .column-header {
+            padding: 10px 8px;
+            font-weight: 600;
+            color: #172b4d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .column-content {
+            overflow-y: auto;
+            flex: 1;
+            padding: 0 4px;
+            scrollbar-width: thin;
+            scrollbar-color: #bfc4ce transparent;
+        }
+
+        .kanban-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 2px rgba(9, 30, 66, 0.25);
+            padding: 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            white-space: normal;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        .kanban-card:hover {
+            background: #f4f5f7;
+            border-color: #6366f1;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+
+        /* Robot Animation - MODIFICADO */
+        .robot-container {
+            position: absolute;
+            bottom: -1px;
+            /* Posicionado en la parte inferior del Header */
+            left: 0;
+            width: 100%;
+            height: 2px;
+            pointer-events: none;
+            /* Crucial: Previene la interacción con el cursor */
+            overflow: hidden;
+            z-index: 10;
+            /* Asegura que esté sobre el contenido del header pero debajo del glass-panel */
+        }
+
+        .robot-walker {
+            position: absolute;
+            bottom: 0;
+            font-size: 24px;
+            color: #f97316;
+            /* NARANJA */
+            background-color: #000;
+            /* NEGRO (para el icono) */
+            border-radius: 50%;
+            padding: 2px 4px;
+            animation: walk 20s linear infinite;
+            transform-origin: bottom center;
+            transition: transform 0.5s;
+        }
+
+        @keyframes walk {
+            0% {
+                left: -50px;
+                transform: scaleX(1) translateY(0);
+            }
+
+            25% {
+                transform: scaleX(1) translateY(-5px);
+                /* Pequeño salto o movimiento */
+            }
+
+            45% {
+                left: 90%;
+                transform: scaleX(1) translateY(0);
+            }
+
+            50% {
+                left: 90%;
+                transform: scaleX(-1) translateY(0);
+                /* Gira y vuelve */
+            }
+
+            75% {
+                transform: scaleX(-1) translateY(-5px);
+            }
+
+            95% {
+                left: -50px;
+                transform: scaleX(-1) translateY(0);
+            }
+
+            100% {
+                left: -50px;
+                transform: scaleX(1) translateY(0);
+            }
+        }
+
+        /* Modal */
+        .modal {
+            transition: opacity 0.2s ease-in-out;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .modal.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            transform: scale(0.95);
+            transition: transform 0.2s;
+        }
+
+        .modal.active .modal-content {
+            transform: scale(1);
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="glass-panel z-40 px-6 py-3 flex justify-between items-center relative">
+
+        <div class="flex items-center gap-4">
+            <button onclick="openModal()"
+                class="btn-primary text-white px-4 py-2 rounded-lg font-medium shadow-md flex items-center gap-2 text-sm">
+                <i class="fas fa-plus"></i>
+                <span>Nuevo Ticket</span>
+            </button>
+            <div class="relative">
+                <input type="text" id="search-input" placeholder="Buscar..."
+                    class="pl-9 pr-4 py-2 bg-gray-100 border-none rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none w-64 transition-all">
+                <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xs"></i>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-6">
+            <h1 class="hidden md:block text-lg font-bold text-gray-800" id="page-title">...</h1>
+
+            <div class="flex items-center gap-4 border-l border-gray-300 pl-4">
+                <div class="text-right">
+                    <p class="text-[10px] text-gray-500 uppercase font-bold">Soporte</p>
+                    <p id="support-hours-display" class="text-sm font-bold text-indigo-600">-- / --
+                    </p>
+                </div>
+                <div class="text-right">
+                    <p class="text-[10px] text-gray-500 uppercase font-bold">Adicional</p>
+                    <p id="additional-hours-display" class="text-sm font-bold text-orange-500">--
+                    </p>
+                </div>
+            </div>
+
+            <a href="{{ url_for('logout') }}" class="text-gray-500 hover:text-red-500 transition-colors"
+                title="Cerrar Sesión">
+                <i class="fas fa-sign-out-alt text-xl"></i>
+            </a>
+        </div>
+
+        <div class="robot-container">
+            <div class="robot-walker">
+                <i class="fas fa-robot"></i>
+            </div>
+        </div>
+    </header>
+
+    <div id="loading-message" class="flex-1 flex items-center justify-center text-white text-xl font-medium">
+        <span><i class="fas fa-circle-notch fa-spin mr-2"></i> Cargando tablero...</span>
+    </div>
+
+    <div id="board-container" class="board-container hidden">
+    </div>
+
+    <div id="create-ticket-modal"
+        class="modal fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        <div class="modal-content bg-white w-full max-w-md rounded-xl shadow-2xl p-6 relative">
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times"></i>
+            </button>
+
+            <h2 class="text-xl font-bold text-gray-800 mb-4">Crear Ticket</h2>
+
+            <form id="create-ticket-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Título</label>
+                    <input type="text" name="Name" required
+                        class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+                        placeholder="Resumen del problema">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Descripción</label>
+                    <textarea name="Comment" rows="3" required
+                        class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+                        placeholder="Detalles del problema o solicitud"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Prioridad</label>
+                    <select name="Priority"
+                        class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+                        <option value="Baja">Baja</option>
+                        <option value="Media" selected>Media</option>
+                        <option value="Alta">Alta</option>
+                    </select>
+                </div>
+
+                <div id="assignment-section" class="hidden">
+                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Asignar
+                        a</label>
+                    <select id="assign-select" name="assign"
+                        class="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm">
+                    </select>
+                </div>
+
+                <button type="submit"
+                    class="btn-primary w-full text-white px-4 py-2 rounded-lg font-medium shadow-md flex items-center justify-center gap-2 text-sm">
+                    <i class="fas fa-paper-plane"></i>
+                    Crear Ticket
+                </button>
+            </form>
+        </div>
+    </div>
+
+
+    <script>
+        const api_base_url = '{{ api_base_url | safe }}';
+        const token = '{{ access_token | safe }}';
+        let currentUserCode = null;
+        let companyEncargados = [];
+
+        // Modal Functions
+        function openModal() { document.getElementById('create-ticket-modal').classList.add('active'); }
+        function closeModal() {
+            document.getElementById('create-ticket-modal').classList.remove('active');
+            document.getElementById('create-ticket-form').reset();
+        }
+        document.getElementById('create-ticket-modal').addEventListener('click', function (e) {
+            if (e.target === this) closeModal();
+        });
+
+        document.addEventListener('DOMContentLoaded', async function () {
+            const boardContainer = document.getElementById('board-container');
+            const loadingMessage = document.getElementById('loading-message');
+            const supportHoursDisplay = document.getElementById('support-hours-display');
+            const additionalHoursDisplay = document.getElementById('additional-hours-display');
+
+            async function fetchUserData() {
+                try {
+                    const response = await fetch(`${api_base_url}/api/users/me`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (response.ok) {
+                        const user = await response.json();
+                        currentUserCode = user.customer_code;
+                        companyEncargados = user.company_encargados || [];
+
+                        document.getElementById('page-title').textContent = user.customer_name || 'Mis Tickets';
+
+                        const supportHours = user.support_hours || 0;
+                        const consumedHours = user.support_hours_consumed || 0;
+                        const remainingHours = supportHours - consumedHours;
+
+                        supportHoursDisplay.textContent = `${remainingHours.toFixed(1)} / ${supportHours.toFixed(1)}`;
+
+                        // NOTA: No se usa additional_hours_consumed, solo HourCot del ticket
+                        // additionalHoursDisplay.textContent = user.additional_hours_consumed?.toFixed(1) || '0.0';
+
+                        setupAssignmentDropdown();
+                    }
+                } catch (error) { console.error('Error fetching user data:', error); }
+            }
+
+            function setupAssignmentDropdown() {
+                const section = document.getElementById('assignment-section');
+                const select = document.getElementById('assign-select');
+
+                if (companyEncargados.length > 1) {
+                    section.classList.remove('hidden');
+                    select.innerHTML = '<option value="">Seleccionar Módulo...</option>';
+                    companyEncargados.forEach(enc => {
+                        const option = document.createElement('option');
+                        option.value = enc.username;
+                        option.textContent = enc.label;
+                        select.appendChild(option);
+                    });
+                    select.required = true;
+                } else {
+                    section.classList.add('hidden');
+                    select.required = false;
+                    select.innerHTML = '';
+                }
+            }
+
+            async function fetchTickets() {
+                try {
+                    const response = await fetch(`${api_base_url}/api/cards/`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+
+                    if (!response.ok) throw new Error('Failed to load tickets');
+
+                    const tickets = await response.json();
+                    let totalAdditionalHours = 0;
+
+                    loadingMessage.style.display = 'none';
+                    boardContainer.classList.remove('hidden');
+                    boardContainer.innerHTML = '';
+
+                    // Canonical statuses map
+                    const canonicalStatuses = {
+                        'nuevo': 'Nuevo',
+                        'pendiente': 'Pendiente',
+                        'pend': 'Pendiente',
+                        'en proceso': 'En proceso',
+                        'en prog': 'En proceso',
+                        'en pruebas': 'En pruebas',
+                        'pruebausu': 'En pruebas',
+                        'esperando respuesta': 'Esperando respuesta',
+                        'pendusu': 'Esperando respuesta',
+                        'cerrado': 'Cerrado'
+                    };
+
+                    // Group tickets
+                    const ticketsByStatus = tickets.reduce((acc, ticket) => {
+                        let rawStatus = ticket.State || 'Sin Estado';
+                        let status = rawStatus;
+
+                        if (canonicalStatuses[rawStatus.toLowerCase()]) {
+                            status = canonicalStatuses[rawStatus.toLowerCase()];
+                        }
+
+                        if (!acc[status]) acc[status] = [];
+                        acc[status].push(ticket);
+
+                        if (ticket.AdditionalHoursStatus && ticket.AdditionalHoursStatus !== 'No Adicional' && ticket.AdditionalHoursStatus !== 'Rechazado') {
+                            if (ticket.HourCot) totalAdditionalHours += ticket.HourCot;
+                        }
+                        return acc;
+                    }, {});
+
+                    // Define columns order
+                    const statusOrder = ['Nuevo', 'Pendiente', 'En proceso', 'En pruebas', 'Esperando respuesta', 'Cerrado'];
+
+                    // Add dynamic statuses
+                    Object.keys(ticketsByStatus).forEach(s => {
+                        if (!statusOrder.includes(s)) {
+                            const exists = statusOrder.some(existing => existing.toLowerCase() === s.toLowerCase());
+                            if (!exists) statusOrder.push(s);
+                        }
+                    });
+
+                    statusOrder.forEach(status => {
+                        const column = document.createElement('div');
+                        column.className = 'kanban-column';
+
+                        const count = ticketsByStatus[status] ? ticketsByStatus[status].length : 0;
+
+                        column.innerHTML = `
+                            <div class="column-header">
+                                <span class="uppercase text-xs tracking-wider">${status}</span>
+                                <span class="bg-gray-200 text-gray-600 text-[10px] px-2 py-0.5 rounded-full">${count}</span>
+                            </div>
+                            <div class="column-content space-y-2 mt-2"></div>
+                        `;
+
+                        const contentDiv = column.querySelector('.column-content');
+
+                        if (ticketsByStatus[status]) {
+                            ticketsByStatus[status].forEach(ticket => {
+                                const card = document.createElement('div');
+                                card.className = 'kanban-card group';
+                                card.onclick = () => {
+                                    if (window.getSelection().toString().length === 0) {
+                                        window.location.href = `/actividad?id=${ticket.internalId}`;
+                                    }
+                                };
+
+                                let priorityBadge = '';
+                                if (ticket.Priority === 'Alta') {
+                                    priorityBadge = `<span class="bg-red-100 text-red-600 text-[10px] px-1.5 py-0.5 rounded font-bold">ALTA</span>`;
+                                }
+
+                                card.innerHTML = `
+                                    <div class="flex justify-between items-start mb-2">
+                                        ${priorityBadge}
+                                        <span class="text-[10px] text-gray-400 ml-auto">#${ticket.internalId}</span>
+                                    </div>
+                                    <h4 class="text-sm font-semibold text-gray-800 mb-1 leading-snug group-hover:text-indigo-600">${ticket.Name || 'Sin Título'}</h4>
+                                    <div class="flex items-center gap-2 mt-2 text-xs text-gray-400">
+                                        <i class="far fa-clock"></i>
+                                        <span>${new Date(ticket.state_last_changed_date || Date.now()).toLocaleDateString()}</span>
+                                    </div>
+                                `;
+                                contentDiv.appendChild(card);
+                            });
+                        }
+
+                        const addBtn = document.createElement('button');
+                        addBtn.className = 'mt-2 w-full py-1.5 text-gray-500 hover:bg-gray-200 rounded text-xs flex items-center justify-start px-2 gap-2 transition-colors';
+                        addBtn.innerHTML = '<i class="fas fa-plus"></i> Añade una tarjeta';
+                        addBtn.onclick = openModal;
+                        column.appendChild(addBtn);
+
+                        boardContainer.appendChild(column);
+                    });
+
+                    additionalHoursDisplay.textContent = totalAdditionalHours.toFixed(1);
+
+                } catch (error) {
+                    console.error('Error loading tickets:', error);
+                    loadingMessage.innerHTML = '<span class="text-red-200">Error al cargar los tickets.</span>';
+                }
+            }
+
+            // Create Ticket Handler
+            document.getElementById('create-ticket-form').addEventListener('submit', async function (e) {
+                e.preventDefault();
+                const btn = this.querySelector('button[type="submit"]');
+                const originalText = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+                const formData = new FormData(this);
+                const data = {
+                    Name: formData.get('Name'),
+                    Comment: formData.get('Comment'),
+                    Priority: formData.get('Priority'),
+                    State: 'Nuevo',
+                    Date: new Date().toISOString().split('T')[0],
+                    CustCode: currentUserCode,
+                    assign: formData.get('assign') || (companyEncargados.length === 1 ? companyEncargados[0].username : null)
+                };
+
+                try {
+                    const response = await fetch(`${api_base_url}/api/cards/`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                        body: JSON.stringify(data)
+                    });
+
+                    if (!response.ok) throw new Error('Error');
+                    closeModal();
+                    fetchTickets();
+                } catch (error) {
+                    alert('Error al crear el ticket.');
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }
+            });
+
+            // Search
+            document.getElementById('search-input').addEventListener('keyup', function (e) {
+                const term = e.target.value.toLowerCase();
+                document.querySelectorAll('.kanban-card').forEach(card => {
+                    const text = card.textContent.toLowerCase();
+                    card.style.display = text.includes(term) ? 'block' : 'none';
+                });
+            });
+
+            await fetchUserData();
+            fetchTickets();
+        });
+    </script>
+</body>
+
+</html>

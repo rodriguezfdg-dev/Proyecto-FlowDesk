@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Actividades - Flowdesk</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/toast.css') }}">
+    <script src="{{ url_for('static', filename='js/toast.js') }}"></script>
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradient {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        /* Glassmorphism for Sidebar and Cards */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .glass-sidebar {
+            background: rgba(31, 41, 55, 0.85);
+            /* Darker glass for sidebar */
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.5);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(99, 102, 241, 0.8);
+        }
+
+        /* Table Styles */
+        .glass-table thead {
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .glass-table th {
+            color: #4b5563;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .glass-table tbody tr {
+            transition: all 0.2s ease;
+            border-bottom: 1px solid rgba(229, 231, 235, 0.5);
+        }
+
+        .glass-table tbody tr:hover {
+            background: rgba(255, 255, 255, 0.5);
+            transform: scale(1.005);
+        }
+
+        /* Form Elements */
+        .form-input {
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(209, 213, 219, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            background: white;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+
+        /* Animations */
+        .fade-in-up {
+            animation: fadeInUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .delay-100 {
+            animation-delay: 0.1s;
+        }
+
+        .delay-200 {
+            animation-delay: 0.2s;
+        }
+
+        .delay-300 {
+            animation-delay: 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+        }
+    </style>
+</head>
+
+<body class="text-gray-800">
+    <div id="toast-container"></div>
+
+    <div id="app" class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <aside id="sidebar" class="glass-sidebar w-64 flex-shrink-0 flex flex-col transition-all duration-300 z-20">
+            <div class="h-16 flex items-center px-6 border-b border-gray-700/50">
+                <div class="text-2xl font-bold text-white">
+                    Flow<span class="text-indigo-400">desk</span>
+                </div>
+            </div>
+
+            <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+                <a href="{{ url_for('desk') }}"
+                    class="flex items-center px-3 py-2.5 rounded-lg text-gray-300 hover:bg-white/10 hover:text-white transition-colors group">
+                    <i
+                        class="fas fa-columns w-6 text-center text-gray-400 group-hover:text-indigo-400 transition-colors"></i>
+                    <span class="ml-2 font-medium">Tickets</span>
+                </a>
+                <a href="{{ url_for('mis_actividades') }}"
+                    class="flex items-center px-3 py-2.5 rounded-lg bg-indigo-600/20 text-indigo-300 border border-indigo-500/30">
+                    <i class="fas fa-tasks w-6 text-center text-indigo-400"></i>
+                    <span class="ml-2 font-medium">Mis Actividades</span>
+                </a>
+                <a href="{{ url_for('clientes_new') }}"
+                    class="flex items-center px-3 py-2.5 rounded-lg text-gray-300 hover:bg-white/10 hover:text-white transition-colors group">
+                    <i
+                        class="fas fa-users w-6 text-center text-gray-400 group-hover:text-indigo-400 transition-colors"></i>
+                    <span class="ml-2 font-medium">Usuarios</span>
+                </a>
+                <a href="{{ url_for('empresas') }}"
+                    class="flex items-center px-3 py-2.5 rounded-lg text-gray-300 hover:bg-white/10 hover:text-white transition-colors group">
+                    <i
+                        class="fas fa-building w-6 text-center text-gray-400 group-hover:text-indigo-400 transition-colors"></i>
+                    <span class="ml-2 font-medium">Clientes</span>
+                </a>
+                <a href="{{ url_for('actividad') }}"
+                    class="flex items-center px-3 py-2.5 rounded-lg text-gray-300 hover:bg-white/10 hover:text-white transition-colors group">
+                    <i
+                        class="fas fa-plus-circle w-6 text-center text-gray-400 group-hover:text-indigo-400 transition-colors"></i>
+                    <span class="ml-2 font-medium">Crear Ticket</span>
+                </a>
+                <a href="{{ url_for('reports') }}"
+                    class="flex items-center px-3 py-2.5 rounded-lg text-gray-300 hover:bg-white/10 hover:text-white transition-colors group">
+                    <i
+                        class="fas fa-chart-line w-6 text-center text-gray-400 group-hover:text-indigo-400 transition-colors"></i>
+                    <span class="ml-2 font-medium">Reportes</span>
+                </a>
+                <a href="{{ url_for('settings') }}"
+                    class="flex items-center px-3 py-2.5 rounded-lg text-gray-300 hover:bg-white/10 hover:text-white transition-colors group">
+                    <i
+                        class="fas fa-cog w-6 text-center text-gray-400 group-hover:text-indigo-400 transition-colors"></i>
+                    <span class="ml-2 font-medium">Ajustes</span>
+                </a>
+            </nav>
+
+            <!-- Animated Footer -->
+            <div class="p-4 border-t border-gray-700/50">
+                <div id="sidebar-footer-content"
+                    class="h-10 flex items-center justify-center transition-opacity duration-500">
+                    <span class="text-lg font-bold text-indigo-400 tracking-wider">Flowdesk</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto p-4 md:p-8 relative z-10">
+            <!-- Header -->
+            <header class="flex justify-between items-center mb-8 fade-in-up">
+                <div>
+                    <h1 class="text-3xl font-bold text-white drop-shadow-md">Mis Actividades</h1>
+                    <p class="text-indigo-100 mt-1">Gestiona y visualiza tu historial de actividades</p>
+                </div>
+                <a href="{{ url_for('logout') }}"
+                    class="flex items-center space-x-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl backdrop-blur-md border border-white/20 transition-all shadow-lg hover:shadow-xl">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Salir</span>
+                </a>
+            </header>
+
+            <!-- Content Card -->
+            <div class="glass-panel rounded-3xl p-6 md:p-8 shadow-2xl fade-in-up delay-100">
+                <!-- Filters -->
+                <div class="mb-8 p-5 bg-white/50 rounded-2xl border border-white/50 shadow-sm">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-5 items-end">
+                        <div>
+                            <label for="filter-client"
+                                class="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
+                            <div class="relative">
+                                <select id="filter-client"
+                                    class="form-input block w-full pl-3 pr-10 py-2.5 rounded-xl text-sm focus:outline-none appearance-none cursor-pointer">
+                                    <option value="">Todos los Clientes</option>
+                                </select>
+                                <div
+                                    class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                                    <i class="fas fa-chevron-down text-xs"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label for="filter-start-date" class="block text-sm font-medium text-gray-700 mb-1">Fecha
+                                Inicio</label>
+                            <input type="date" id="filter-start-date"
+                                class="form-input block w-full px-3 py-2.5 rounded-xl text-sm focus:outline-none">
+                        </div>
+                        <div>
+                            <label for="filter-end-date" class="block text-sm font-medium text-gray-700 mb-1">Fecha
+                                Fin</label>
+                            <input type="date" id="filter-end-date"
+                                class="form-input block w-full px-3 py-2.5 rounded-xl text-sm focus:outline-none">
+                        </div>
+                        <div class="flex space-x-3">
+                            <button id="apply-filters-btn"
+                                class="flex-1 btn-primary text-white px-4 py-2.5 rounded-xl font-medium shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                <i class="fas fa-filter mr-2"></i> Filtrar
+                            </button>
+                            <button id="clear-filters-btn"
+                                class="flex-1 bg-white text-gray-700 border border-gray-300 px-4 py-2.5 rounded-xl font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors shadow-sm">
+                                <i class="fas fa-times mr-2"></i> Limpiar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Table -->
+                <div class="overflow-hidden rounded-2xl border border-gray-200/50 shadow-inner bg-white/30">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200/50 glass-table">
+                            <thead>
+                                <tr>
+                                    <th scope="col"
+                                        class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                                        ID</th>
+                                    <th scope="col"
+                                        class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                                        Resumen</th>
+                                    <th scope="col"
+                                        class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                                        Fecha</th>
+                                    <th scope="col"
+                                        class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                                        Tiempo</th>
+                                    <th scope="col"
+                                        class="px-6 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
+                                        Cliente ID</th>
+                                </tr>
+                            </thead>
+                            <tbody id="activities-table-body" class="divide-y divide-gray-200/50">
+                                <!-- Rows will be inserted here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const token = '{{ access_token | safe }}';
+        const api_base_url = '{{ api_base_url | safe }}';
+
+        // Sidebar Footer Animation
+        document.addEventListener('DOMContentLoaded', function () {
+            const footerContent = document.getElementById('sidebar-footer-content');
+            if (!footerContent) return;
+
+            const items = [
+                '<span class="text-lg font-bold text-indigo-400 tracking-wider">Flowdesk</span>',
+                '<img src="{{ url_for("static", filename="img/innova_logo.png") }}" alt="Innova" class="h-8 object-contain">',
+                '<img src="{{ url_for("static", filename="img/sap_logo.png") }}" alt="SAP" class="h-8 object-contain">',
+                '<img src="{{ url_for("static", filename="img/odoo_logo.png") }}" alt="Odoo" class="h-8 object-contain">',
+                '<img src="{{ url_for("static", filename="img/hexagon_logo.png") }}" alt="Hexagon" class="h-8 object-contain">'
+            ];
+
+            let currentIndex = 0;
+            setInterval(() => {
+                footerContent.style.opacity = '0';
+                setTimeout(() => {
+                    currentIndex = (currentIndex + 1) % items.length;
+                    footerContent.innerHTML = items[currentIndex];
+                    footerContent.style.opacity = '1';
+                }, 500);
+            }, 3000);
+        });
+
+        // Activity Logic
+        async function fetchAndRenderActivities() {
+            const tbody = document.getElementById('activities-table-body');
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando actividades...</td></tr>';
+
+            const clienteId = document.getElementById('filter-client').value;
+            const startDate = document.getElementById('filter-start-date').value;
+            const endDate = document.getElementById('filter-end-date').value;
+
+            const queryParams = new URLSearchParams();
+            if (clienteId) queryParams.append('cliente_id', clienteId);
+            if (startDate) queryParams.append('start_date', startDate);
+            if (endDate) queryParams.append('end_date', endDate);
+
+            const queryString = queryParams.toString();
+            const fetchUrl = `${api_base_url}/api/actividades/${queryString ? '?' + queryString : ''}`;
+
+            try {
+                const response = await fetch(fetchUrl, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to fetch activities.');
+                }
+
+                const activities = await response.json();
+                tbody.innerHTML = '';
+
+                if (activities.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-gray-500">No se encontraron actividades con los filtros seleccionados.</td></tr>';
+                    return;
+                }
+
+                activities.forEach(activity => {
+                    const startTime = new Date(activity.hora_inicio);
+                    const endTime = new Date(activity.hora_fin);
+                    const durationMs = endTime - startTime;
+                    const hours = Math.floor(durationMs / 3600000);
+                    const minutes = Math.floor((durationMs % 3600000) / 60000);
+                    const durationFormatted = `${hours}h ${minutes}m`;
+
+                    const row = document.createElement('tr');
+                    row.className = 'cursor-pointer group';
+                    row.setAttribute('onclick', `window.location.href = '/actividad_detalle?id=${activity.id}'`);
+
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-indigo-600 group-hover:text-indigo-800">#${activity.id}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-medium">${activity.titulo}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600"><i class="far fa-calendar-alt mr-2 text-gray-400"></i>${new Date(activity.hora_inicio).toLocaleDateString('es-ES')}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600"><span class="px-2 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold">${durationFormatted}</span></td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${activity.cliente_id}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+
+            } catch (error) {
+                console.error('Error:', error);
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-8 text-red-500"><i class="fas fa-exclamation-circle mr-2"></i>Error al cargar actividades: ${error.message}</td></tr>`;
+            }
+        }
+
+        async function populateClientFilter() {
+            try {
+                const response = await fetch(`${api_base_url}/api/clientes/`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!response.ok) throw new Error('Failed to fetch clients');
+
+                const clients = await response.json();
+                const select = document.getElementById('filter-client');
+
+                clients.forEach(client => {
+                    const option = document.createElement('option');
+                    option.value = client.id;
+                    option.textContent = client.nombre || client.razon_social;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error("Could not populate client filter:", error);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!token || token === 'None' || token.length < 10) {
+                showToast('Authentication error: Token is missing. Please log in again.', 'error');
+                window.location.href = "{{ url_for('login') }}";
+                return;
+            }
+
+            await populateClientFilter();
+            await fetchAndRenderActivities();
+
+            document.getElementById('apply-filters-btn').addEventListener('click', fetchAndRenderActivities);
+            document.getElementById('clear-filters-btn').addEventListener('click', () => {
+                document.getElementById('filter-client').value = '';
+                document.getElementById('filter-start-date').value = '';
+                document.getElementById('filter-end-date').value = '';
+                fetchAndRenderActivities();
+            });
+        });
+    </script>
+</body>
+
+</html>

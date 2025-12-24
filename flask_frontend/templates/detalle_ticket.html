@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalle de Ticket</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/toast.css') }}">
+    <script src="{{ url_for('static', filename='js/toast.js') }}"></script>
+    <style>
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .glass-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .comment-bubble {
+            position: relative;
+            background: #f3f4f6;
+            border-radius: 1rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .comment-bubble::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            width: 0;
+            height: 0;
+            border: 10px solid transparent;
+            border-right-color: #f3f4f6;
+            border-left: 0;
+            border-top: 0;
+            margin-top: -5px;
+            margin-left: -10px;
+        }
+
+        /* Custom Scrollbar for description */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #c7c7c7;
+            border-radius: 3px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50">
+
+    <!-- Header Section -->
+    <div class="glass-header text-white pb-24 pt-8 px-4 shadow-lg">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex justify-between items-center mb-6">
+                <div class="flex space-x-3">
+                    <button onclick="window.history.back()"
+                        class="p-2 bg-white/20 hover:bg-white/30 rounded-full backdrop-blur-sm transition duration-200 text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                    </button>
+                    <a href="{{ url_for('desk') }}"
+                        class="p-2 bg-white/20 hover:bg-white/30 rounded-full backdrop-blur-sm transition duration-200 text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                        </svg>
+                    </a>
+                </div>
+                <div class="text-right">
+                    <p class="text-sm opacity-80">Ticket ID</p>
+                    <h1 class="text-3xl font-bold" id="ticket-id-header">#Loading...</h1>
+                    <input type="hidden" id="ticket-id" value="">
+                </div>
+            </div>
+            <div class="flex flex-col md:flex-row justify-between items-end">
+                <div>
+                    <p class="text-white/80 text-sm mb-1">Cliente</p>
+                    <h2 id="ticket-cliente" class="text-2xl font-semibold text-white">Cargando cliente...</h2>
+                </div>
+                <div class="mt-4 md:mt-0 flex items-center space-x-4">
+                    <div class="text-right">
+                        <p class="text-white/80 text-sm mb-1">Fecha de Creación</p>
+                        <p id="ticket-fecha" class="font-medium">--/--/----</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Card -->
+    <main class="max-w-7xl mx-auto -mt-16 px-4 fade-in pb-12">
+        <div class="bg-white rounded-xl shadow-xl overflow-hidden min-h-[600px]">
+            <!-- Toast Notification Container -->
+            <div id="toast-container"></div>
+
+            <div id="loading-message" class="p-12 text-center text-gray-500">
+                <svg class="animate-spin h-10 w-10 text-indigo-500 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg"
+                    fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                    </path>
+                </svg>
+                <p class="text-lg font-medium">Cargando detalles del ticket...</p>
+            </div>
+
+            <div id="ticket-details-container" class="hidden grid grid-cols-1 lg:grid-cols-3">
+
+                <!-- Left Sidebar: Meta Info -->
+                <div class="lg:col-span-1 bg-gray-50/50 p-6 border-r border-gray-100 space-y-6">
+
+                    <!-- Status Card -->
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Estado del
+                            Ticket</label>
+                        <div class="flex items-center space-x-2">
+                            <div class="relative w-full">
+                                <select id="ticket-estado-select"
+                                    class="block w-full pl-3 pr-10 py-2 text-base border-gray-200 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md bg-gray-50 hover:bg-white transition-colors cursor-pointer font-medium text-gray-700">
+                                    <option>Nuevo</option>
+                                    <option>Pendiente</option>
+                                    <option>En proceso</option>
+                                    <option>En pruebas</option>
+                                    <option>Cerrado</option>
+                                    <option>Esperando respuesta</option>
+                                </select>
+                            </div>
+                            <button id="reopen-ticket-btn"
+                                class="hidden p-2 bg-blue-100 text-blue-600 rounded-md hover:bg-blue-200 transition-colors"
+                                title="Reabrir Ticket">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Priority Card -->
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                        <label
+                            class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Prioridad</label>
+                        <select id="ticket-prioridad-select"
+                            class="block w-full pl-3 pr-10 py-2 text-base border-gray-200 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md bg-gray-50 hover:bg-white transition-colors cursor-pointer font-medium">
+                            <option>Baja</option>
+                            <option>Media</option>
+                            <option>Alta</option>
+                            <option>Crítica</option>
+                        </select>
+                    </div>
+
+                    <!-- Assignee Card -->
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                        <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Asignado
+                            a</label>
+                        <div class="flex items-center">
+                            <div
+                                class="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold mr-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                            </div>
+                            <select id="ticket-assign"
+                                class="block w-full pl-3 pr-10 py-2 text-base border-gray-200 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md bg-gray-50 hover:bg-white transition-colors cursor-pointer">
+                                <option value="">Sin asignar</option>
+                                <!-- Consultants will be loaded here -->
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Additional Hours Card -->
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                        <label id="additional-hours-status-label"
+                            class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                            Horas Adicionales
+                            <span id="additional-hours-status-badge"
+                                class="ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-gray-100 text-gray-600">N/A</span>
+                        </label>
+                        <select id="additional-hours-status-select"
+                            class="block w-full pl-3 pr-10 py-2 text-base border-gray-200 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md bg-gray-50 hover:bg-white transition-colors cursor-pointer mb-3">
+                            <option value="">No Adicional</option>
+                            <option value="Pendiente de Aprobacion">Pendiente de Aprobación</option>
+                            <option value="Aprobado">Aprobado</option>
+                            <option value="Rechazado">Rechazado</option>
+                        </select>
+
+                        <div id="approved-hours-container" class="hidden pt-3 border-t border-gray-100">
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Horas Aprobadas</label>
+                            <div class="flex items-center space-x-2">
+                                <input type="number" id="approved-hours-input" step="0.5" min="0" placeholder="0.0"
+                                    class="block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                <button id="save-approved-hours-btn"
+                                    class="hidden px-3 py-2 bg-green-500 text-white text-xs font-bold rounded-md hover:bg-green-600 transition-colors shadow-sm">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
+                                        viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M5 13l4 4L19 7" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Attachments Card -->
+                    <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                        <label
+                            class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Adjuntos</label>
+                        <ul id="attachments-list" class="space-y-2 mb-3">
+                            <!-- Attachments will be loaded here -->
+                        </ul>
+                        <form id="attachment-form" class="mt-2">
+                            <label
+                                class="flex items-center justify-center w-full px-4 py-2 bg-gray-50 border border-gray-300 border-dashed rounded-md cursor-pointer hover:bg-gray-100 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 mr-2" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                                </svg>
+                                <span class="text-sm text-gray-500">Subir archivo</span>
+                                <input type="file" id="new-attachments" name="files" multiple class="hidden">
+                            </label>
+                            <button type="submit" id="upload-btn"
+                                class="hidden mt-2 w-full px-4 py-2 bg-indigo-600 text-white text-sm font-bold rounded-md hover:bg-indigo-700 transition-colors shadow-sm">
+                                Subir
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Generate Activity Button (Role Based) -->
+                    <div id="generate-activity-container" class="hidden mt-6">
+                        <a id="generar-actividad-btn" href="#"
+                            class="block w-full text-center px-4 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200">
+                            <div class="flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                </svg>
+                                Generar Actividad
+                            </div>
+                        </a>
+                    </div>
+
+                </div>
+
+                <!-- Right Content: Description & Comments -->
+                <div class="lg:col-span-2 p-8">
+
+                    <!-- Title & Description -->
+                    <div class="mb-10">
+                        <div class="group relative mb-2">
+                            <label
+                                class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Asunto</label>
+                            <h2 id="ticket-titulo"
+                                class="text-2xl font-bold text-gray-800 group-hover:text-indigo-600 transition-colors">
+                            </h2>
+                            <button id="edit-titulo-btn"
+                                class="absolute top-0 right-0 opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-indigo-600 transition-all">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L14.732 5.232z" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div id="edit-titulo-container" class="hidden space-y-2 mb-4">
+                            <input type="text" id="edit-titulo-input"
+                                class="block w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-lg font-semibold">
+                            <div class="flex space-x-2">
+                                <button id="save-titulo-btn"
+                                    class="px-3 py-1 bg-green-600 text-white text-xs font-bold rounded hover:bg-green-700">Guardar</button>
+                                <button id="cancel-titulo-btn"
+                                    class="px-3 py-1 bg-gray-200 text-gray-700 text-xs font-bold rounded hover:bg-gray-300">Cancelar</button>
+                            </div>
+                        </div>
+
+                        <div class="group relative">
+                            <label
+                                class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Descripción</label>
+                            <div id="ticket-descripcion-display"
+                                class="bg-gray-50 rounded-xl p-6 border border-gray-100 text-gray-700 leading-relaxed whitespace-pre-wrap min-h-[100px]">
+                                <p id="ticket-descripcion" class="text-gray-800 whitespace-pre-wrap"></p>
+                            </div>
+                            <button id="edit-descripcion-btn"
+                                class="absolute top-8 right-4 opacity-0 group-hover:opacity-100 p-2 bg-white rounded-full shadow-sm text-gray-400 hover:text-indigo-600 transition-all">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.5L14.732 5.232z" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div id="edit-descripcion-container" class="hidden space-y-3">
+                            <textarea id="edit-descripcion-textarea" rows="6"
+                                class="block w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-gray-700"></textarea>
+                            <div class="flex space-x-2">
+                                <button id="save-descripcion-btn"
+                                    class="px-4 py-2 bg-green-600 text-white text-sm font-bold rounded-lg hover:bg-green-700 shadow-sm">Guardar
+                                    Cambios</button>
+                                <button id="cancel-descripcion-btn"
+                                    class="px-4 py-2 bg-gray-200 text-gray-700 text-sm font-bold rounded-lg hover:bg-gray-300">Cancelar</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Comments Section -->
+                    <div class="border-t border-gray-100 pt-8">
+                        <h3 class="text-lg font-bold text-gray-800 mb-6 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-indigo-500" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                            </svg>
+                            Comentarios
+                        </h3>
+
+                        <div id="comments-list"
+                            class="space-y-6 mb-8 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                            <!-- Comments will be loaded here -->
+                            <div class="animate-pulse flex space-x-4">
+                                <div class="rounded-full bg-gray-200 h-10 w-10"></div>
+                                <div class="flex-1 space-y-2 py-1">
+                                    <div class="h-2 bg-gray-200 rounded"></div>
+                                    <div class="space-y-3">
+                                        <div class="grid grid-cols-3 gap-4">
+                                            <div class="h-2 bg-gray-200 rounded col-span-2"></div>
+                                            <div class="h-2 bg-gray-200 rounded col-span-1"></div>
+                                        </div>
+                                        <div class="h-2 bg-gray-200 rounded"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <form id="comment-form" class="relative">
+                            <div class="flex items-start space-x-4">
+                                <div class="flex-shrink-0">
+                                    <div
+                                        class="h-10 w-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold shadow-md">
+                                        Yo
+                                    </div>
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <div class="relative">
+                                        <textarea id="new-comment" name="comment" rows="3"
+                                            class="block w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-4 resize-none"
+                                            placeholder="Escribe un comentario..." required></textarea>
+                                        <div class="absolute bottom-2 right-2">
+                                            <button type="submit"
+                                                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all">
+                                                Enviar
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <script>
+        const api_base_url = "{{ api_base_url | safe }}";
+        const token = "{{ access_token | safe }}";
+        const userRoll = "{{ user_roll | safe }}";
+        const LOGGED_IN_USER = "{{ logged_in_user | safe }}";
+
+        function applyAdditionalHoursStatusColor(selectElement, badgeElement, status) {
+            selectElement.classList.remove('bg-green-100', 'text-green-800', 'bg-blue-100', 'text-blue-800', 'bg-red-100', 'text-red-800');
+            badgeElement.classList.remove('bg-green-100', 'text-green-800', 'bg-blue-100', 'text-blue-800', 'bg-red-100', 'text-red-800');
+            badgeElement.textContent = status === '' || status === null ? 'N/A' : status;
+
+            switch (status) {
+                case 'Aprobado':
+                    selectElement.classList.add('bg-green-100', 'text-green-800');
+                    badgeElement.classList.add('bg-green-100', 'text-green-800');
+                    break;
+                case 'Pendiente de Aprobacion':
+                    selectElement.classList.add('bg-blue-100', 'text-blue-800');
+                    badgeElement.classList.add('bg-blue-100', 'text-blue-800');
+                    break;
+                case 'Rechazado':
+                    selectElement.classList.add('bg-red-100', 'text-red-800');
+                    badgeElement.classList.add('bg-red-100', 'text-red-800');
+                    break;
+                default:
+                    badgeElement.classList.add('bg-gray-100', 'text-gray-800');
+                    break;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            const ticketId = urlParams.get('id');
+            const ticketDetailsContainer = document.getElementById('ticket-details-container');
+            const loadingMessage = document.getElementById('loading-message');
+
+            if (ticketId) {
+                document.getElementById('ticket-id').value = ticketId;
+                document.getElementById('ticket-id-header').textContent = `#${ticketId}`;
+            } else {
+                loadingMessage.textContent = 'Error: No se ha especificado un ID de ticket.';
+                return;
+            }
+
+            // Function to populate the consultants dropdown
+            async function populateConsultantsDropdown(currentAssignee) {
+                try {
+                    const response = await fetch(`${api_base_url}/api/personas/`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (!response.ok) throw new Error('Failed to fetch consultants.');
+
+                    const personas = await response.json();
+                    const assignSelect = document.getElementById('ticket-assign');
+                    assignSelect.innerHTML = '<option value="">Sin asignar</option>';
+
+                    personas.forEach(person => {
+                        if (['1', '3', '4'].includes(person.roll)) {
+                            const option = document.createElement('option');
+                            option.value = person.user;
+                            option.textContent = person.user;
+                            assignSelect.appendChild(option);
+                        }
+                    });
+
+                    if (currentAssignee) {
+                        assignSelect.value = currentAssignee;
+                    }
+
+                    assignSelect.addEventListener('change', (event) => updateCardAssign(event.target.value));
+
+                } catch (error) {
+                    console.error('Error populating consultants:', error);
+                }
+            }
+
+            // Function to update card assignment
+            async function updateCardAssign(newAssignee) {
+                try {
+                    const response = await fetch(`${api_base_url}/api/cards/${ticketId}/assign`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ assign: newAssignee })
+                    });
+
+                    if (!response.ok) throw new Error('Failed to update assignment.');
+                    showToast('Asignación actualizada con éxito.', 'success');
+                } catch (error) {
+                    console.error('Error updating assignment:', error);
+                    showToast(`Error al actualizar asignación: ${error.message}`, 'error');
+                }
+            }
+
+            // Function to reopen a ticket
+            async function reopenTicket(ticketId) {
+                if (!confirm('¿Está seguro de que desea reabrir este ticket?')) return;
+
+                try {
+                    const response = await fetch(`${api_base_url}/api/cards/${ticketId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ estado: 'Abierto' })
+                    });
+
+                    if (!response.ok) throw new Error('Failed to reopen ticket.');
+                    showToast('Ticket reabierto con éxito.', 'success');
+                    window.location.reload();
+                } catch (error) {
+                    console.error('Error reopening ticket:', error);
+                    showToast(`Error al reabrir el ticket: ${error.message}`, 'error');
+                }
+            }
+
+            // Function to update a single ticket field
+            async function updateTicketField(field, value) {
+                try {
+                    const response = await fetch(`${api_base_url}/api/cards/${ticketId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ [field]: value })
+                    });
+
+                    if (!response.ok) throw new Error(`Failed to update ${field}.`);
+
+                    showToast(`Campo '${field}' actualizado con éxito.`, 'success');
+                    return true;
+                } catch (error) {
+                    console.error(`Error updating ${field}:`, error);
+                    showToast(`Error al actualizar ${field}: ${error.message}`, 'error');
+                    return false;
+                }
+            }
+
+
+            // Main logic to fetch and display ticket details
+            try {
+                const response = await fetch(`${api_base_url}/api/cards/${ticketId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        showToast("Session expired. Please log in again.", 'error');
+                        window.location.href = "{{ url_for('logout') }}";
+                        return;
+                    }
+                    throw new Error(`El ticket con ID ${ticketId} no fue encontrado.`);
+                }
+
+                const ticket = await response.json();
+
+                // Populate fields
+                document.getElementById('ticket-titulo').textContent = ticket.Name || 'N/A';
+                document.getElementById('ticket-descripcion').textContent = ticket.Comment || 'Sin descripción.';
+                document.getElementById('ticket-prioridad-select').value = ticket.Priority || 'Baja';
+                document.getElementById('ticket-fecha').textContent = ticket.Date ? new Date(ticket.Date).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' }) : 'N/A';
+                document.getElementById('ticket-cliente').textContent = ticket.CustName || ticket.CustCode || 'N/A';
+                document.getElementById('ticket-estado-select').value = ticket.State || 'Nuevo';
+
+                // Populate consultants
+                await populateConsultantsDropdown(ticket.assign);
+
+                // Additional Hours Status
+                const additionalHoursStatusSelect = document.getElementById('additional-hours-status-select');
+                const additionalHoursStatusBadge = document.getElementById('additional-hours-status-badge');
+                additionalHoursStatusSelect.value = ticket.AdditionalHoursStatus || '';
+                applyAdditionalHoursStatusColor(additionalHoursStatusSelect, additionalHoursStatusBadge, ticket.AdditionalHoursStatus);
+
+                // Approved Hours Initialization
+                const approvedHoursContainer = document.getElementById('approved-hours-container');
+                const approvedHoursInput = document.getElementById('approved-hours-input');
+
+                if (ticket.AdditionalHoursStatus === 'Aprobado') {
+                    approvedHoursContainer.classList.remove('hidden');
+                    approvedHoursInput.value = ticket.HourCot || 0;
+                } else {
+                    approvedHoursContainer.classList.add('hidden');
+                }
+
+                // Restrict "Aprobado" for non-clients
+                if (userRoll !== '2' && userRoll !== '4') {
+                    const approvedOption = additionalHoursStatusSelect.querySelector('option[value="Aprobado"]');
+                    if (approvedOption) approvedOption.disabled = true;
+                }
+
+                // Reopen button
+                if (ticket.State === 'Cerrado') {
+                    const reopenBtn = document.getElementById('reopen-ticket-btn');
+                    reopenBtn.classList.remove('hidden');
+                    reopenBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        reopenTicket(ticketId);
+                    });
+                }
+
+                // Generate Activity Button
+                const generateActivityContainer = document.getElementById('generate-activity-container');
+                const generateActivityBtn = document.getElementById('generar-actividad-btn');
+
+                if (['1', '3', '4'].includes(userRoll)) {
+                    generateActivityContainer.classList.remove('hidden');
+                    const clientId = ticket.CustCode || '';
+                    const ticketIdParam = ticket.internalId || '';
+                    generateActivityBtn.href = `{{ url_for('crear_actividad') }}?ticket_id=${ticketIdParam}&cliente_id=${clientId}`;
+                } else {
+                    generateActivityContainer.classList.add('hidden');
+                }
+
+                loadingMessage.classList.add('hidden');
+                ticketDetailsContainer.classList.remove('hidden');
+
+                if (userRoll === '2') {
+                    document.getElementById('ticket-assign').disabled = true;
+                }
+
+                // Load comments and attachments after ticket data is loaded
+                await loadComments();
+                await loadAttachments();
+
+            } catch (error) {
+                console.error('Error loading ticket details:', error);
+                loadingMessage.textContent = `Error al cargar detalles del ticket: ${error.message}`;
+            }
+
+            // Assignment - Already handled by populateConsultantsDropdown listener
+
+            // Priority
+            const prioritySelect = document.getElementById('ticket-prioridad-select');
+            prioritySelect.addEventListener('change', async () => {
+                await updateTicketField('Priority', prioritySelect.value);
+            });
+
+            // Status
+            const statusSelect = document.getElementById('ticket-estado-select');
+            statusSelect.addEventListener('change', async () => {
+                await updateTicketField('State', statusSelect.value);
+            });
+
+            // Additional Hours
+            const additionalHoursStatusSelect = document.getElementById('additional-hours-status-select');
+            const additionalHoursStatusBadge = document.getElementById('additional-hours-status-badge');
+            additionalHoursStatusSelect.addEventListener('change', async () => {
+                const newStatus = additionalHoursStatusSelect.value;
+                const result = await updateTicketField('AdditionalHoursStatus', newStatus);
+                if (result) {
+                    applyAdditionalHoursStatusColor(additionalHoursStatusSelect, additionalHoursStatusBadge, newStatus);
+                    const approvedHoursContainer = document.getElementById('approved-hours-container');
+                    if (newStatus === 'Aprobado') {
+                        approvedHoursContainer.classList.remove('hidden');
+                    } else {
+                        approvedHoursContainer.classList.add('hidden');
+                    }
+                }
+            });
+
+            // Approved Hours
+            const approvedHoursInput = document.getElementById('approved-hours-input');
+            const saveApprovedHoursBtn = document.getElementById('save-approved-hours-btn');
+            const approvedHoursContainer = document.getElementById('approved-hours-container');
+
+            // Note: Initialization of approvedHoursContainer visibility and value should be in the main try/catch block after ticket load.
+
+
+            approvedHoursInput.addEventListener('input', () => {
+                saveApprovedHoursBtn.classList.remove('hidden');
+            });
+
+            saveApprovedHoursBtn.addEventListener('click', async () => {
+                const hours = parseFloat(approvedHoursInput.value);
+                if (isNaN(hours) || hours < 0) {
+                    showToast("Por favor, ingrese un número válido de horas.", 'warning');
+                    return;
+                }
+                const result = await updateTicketField('HourCot', hours);
+                if (result) {
+                    saveApprovedHoursBtn.classList.add('hidden');
+                    showToast("Horas aprobadas guardadas.", 'success');
+                }
+            });
+
+            // Title
+            const editTituloBtn = document.getElementById('edit-titulo-btn');
+            const ticketTitulo = document.getElementById('ticket-titulo');
+            const editTituloContainer = document.getElementById('edit-titulo-container');
+            const editTituloInput = document.getElementById('edit-titulo-input');
+            const saveTituloBtn = document.getElementById('save-titulo-btn');
+            const cancelTituloBtn = document.getElementById('cancel-titulo-btn');
+
+            editTituloBtn.addEventListener('click', () => {
+                editTituloInput.value = ticketTitulo.textContent;
+                ticketTitulo.classList.add('hidden');
+                editTituloContainer.classList.remove('hidden');
+                editTituloBtn.classList.add('hidden');
+            });
+
+            cancelTituloBtn.addEventListener('click', () => {
+                editTituloContainer.classList.add('hidden');
+                ticketTitulo.classList.remove('hidden');
+                editTituloBtn.classList.remove('hidden');
+            });
+
+            saveTituloBtn.addEventListener('click', async () => {
+                const newTitle = editTituloInput.value;
+                if (!newTitle.trim()) return;
+                const result = await updateTicketField('Name', newTitle);
+                if (result) {
+                    ticketTitulo.textContent = newTitle;
+                    editTituloContainer.classList.add('hidden');
+                    ticketTitulo.classList.remove('hidden');
+                    editTituloBtn.classList.remove('hidden');
+                }
+            });
+
+            // Description
+            const editDescripcionBtn = document.getElementById('edit-descripcion-btn');
+            const ticketDescripcion = document.getElementById('ticket-descripcion');
+            const ticketDescripcionDisplay = document.getElementById('ticket-descripcion-display');
+            const editDescripcionContainer = document.getElementById('edit-descripcion-container');
+            const editDescripcionTextarea = document.getElementById('edit-descripcion-textarea');
+            const saveDescripcionBtn = document.getElementById('save-descripcion-btn');
+            const cancelDescripcionBtn = document.getElementById('cancel-descripcion-btn');
+
+            editDescripcionBtn.addEventListener('click', () => {
+                editDescripcionTextarea.value = ticketDescripcion.textContent;
+                ticketDescripcionDisplay.classList.add('hidden');
+                editDescripcionContainer.classList.remove('hidden');
+                editDescripcionBtn.classList.add('hidden');
+            });
+
+            cancelDescripcionBtn.addEventListener('click', () => {
+                editDescripcionContainer.classList.add('hidden');
+                ticketDescripcionDisplay.classList.remove('hidden');
+                editDescripcionBtn.classList.remove('hidden');
+            });
+
+            saveDescripcionBtn.addEventListener('click', async () => {
+                const newDescription = editDescripcionTextarea.value;
+                const result = await updateTicketField('Comment', newDescription);
+                if (result) {
+                    ticketDescripcion.textContent = newDescription;
+                    editDescripcionContainer.classList.add('hidden');
+                    ticketDescripcionDisplay.classList.remove('hidden');
+                    editDescripcionBtn.classList.remove('hidden');
+                }
+            });
+
+            // Load comments
+            async function loadComments() {
+                const commentsList = document.getElementById('comments-list');
+                try {
+                    const response = await fetch(`${api_base_url}/api/cards/${ticketId}/comments/`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (!response.ok) throw new Error('Failed to fetch comments');
+                    const comments = await response.json();
+
+                    commentsList.innerHTML = '';
+                    if (comments.length === 0) {
+                        commentsList.innerHTML = '<p class="text-gray-500">No hay comentarios aún.</p>';
+                    } else {
+                        comments.forEach(comment => {
+                            const commentEl = document.createElement('div');
+                            commentEl.className = 'comment-bubble';
+                            let dateDisplay = comment.date_column || 'Fecha desconocida';
+                            if (comment.time_column) dateDisplay += ' ' + comment.time_column;
+
+                            commentEl.innerHTML = `
+                                <div class="flex justify-between items-start mb-1">
+                                    <span class="font-bold text-indigo-600">${comment.user || 'Usuario'}</span>
+                                      <span class="text-xs text-gray-400">${dateDisplay}</span>
+                                </div>
+                                <p class="text-gray-700 whitespace-pre-wrap">${comment.comment || ''}</p>
+                            `;
+                            commentsList.appendChild(commentEl);
+                        });
+                        // Scroll to bottom of comments list (optional, but helpful for UX)
+                        commentsList.scrollTop = commentsList.scrollHeight;
+                    }
+                } catch (error) {
+                    console.error('Error loading comments:', error);
+                    commentsList.innerHTML = '<p class="text-red-500">Error al cargar comentarios.</p>';
+                }
+            }
+
+            // Handle comment submission
+            document.getElementById('comment-form').addEventListener('submit', async function (e) {
+                e.preventDefault();
+                const commentText = document.getElementById('new-comment').value;
+                if (!commentText.trim()) return;
+
+                try {
+                    const response = await fetch(`${api_base_url}/api/cards/${ticketId}/comments/`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ comment: commentText, user: LOGGED_IN_USER })
+                    });
+
+                    if (!response.ok) throw new Error('Failed to post comment');
+
+                    document.getElementById('new-comment').value = '';
+                    loadComments();
+                    showToast('Comentario enviado.', 'success');
+                } catch (error) {
+                    console.error('Error posting comment:', error);
+                    showToast('Error al enviar comentario.', 'error');
+                }
+            });
+
+            // Load attachments
+            async function loadAttachments() {
+                const attachmentsList = document.getElementById('attachments-list');
+                try {
+                    const response = await fetch(`${api_base_url}/api/cards/${ticketId}/attachments`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (!response.ok) throw new Error('Failed to fetch attachments');
+                    const attachments = await response.json();
+
+                    attachmentsList.innerHTML = '';
+                    if (attachments.length === 0) {
+                        attachmentsList.innerHTML = '<li class="text-sm text-gray-500 italic">No hay adjuntos.</li>';
+                    } else {
+                        attachments.forEach(att => {
+                            const li = document.createElement('li');
+                            li.className = 'flex justify-between items-center text-sm';
+                            li.innerHTML = `
+                                <span class="truncate max-w-[150px]" title="${att.filename}">${att.filename}</span>
+                                <a href="${api_base_url}/api/attachments/${att.id}" class="text-indigo-600 hover:text-indigo-800 font-medium" download>Descargar</a>
+                            `;
+                            attachmentsList.appendChild(li);
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error loading attachments:', error);
+                    attachmentsList.innerHTML = '<li class="text-red-500 text-sm">Error al cargar adjuntos.</li>';
+                }
+            }
+
+            // Handle file upload
+            const fileInput = document.getElementById('new-attachments');
+            const uploadBtn = document.getElementById('upload-btn');
+
+            fileInput.addEventListener('change', () => {
+                if (fileInput.files.length > 0) {
+                    uploadBtn.classList.remove('hidden');
+                } else {
+                    uploadBtn.classList.add('hidden');
+                }
+            });
+
+            document.getElementById('attachment-form').addEventListener('submit', async function (e) {
+                e.preventDefault();
+                const files = fileInput.files;
+                if (files.length === 0) return;
+
+                const formData = new FormData();
+                for (let i = 0; i < files.length; i++) {
+                    formData.append('files', files[i]);
+                }
+
+                try {
+                    const response = await fetch(`${api_base_url}/api/cards/${ticketId}/attachments`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: formData
+                    });
+
+                    if (!response.ok) throw new Error('Failed to upload files');
+
+                    fileInput.value = '';
+                    uploadBtn.classList.add('hidden');
+                    loadAttachments();
+                    showToast('Archivos subidos.', 'success');
+                } catch (error) {
+                    console.error('Error uploading files:', error);
+                    showToast('Error al subir archivos.', 'error');
+                }
+            });
+
+        }); // <-- ¡Cierre de la función anónima y del listener DOMContentLoaded!
+    </script>
+
+
+</body>
+
+</html>

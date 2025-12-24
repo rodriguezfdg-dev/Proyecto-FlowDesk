@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ajustes - Flowdesk</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/toast.css') }}">
+    <script src="{{ url_for('static', filename='js/toast.js') }}"></script>
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            /* Gradiente innovador */
+            min-height: 100vh;
+            color: #fff;
+        }
+
+        /* Glassmorphism Classes */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .glass-card:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .glass-input {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            transition: all 0.2s;
+        }
+
+        .glass-input:focus {
+            background: rgba(0, 0, 0, 0.3);
+            border-color: #a78bfa;
+            /* Violeta claro */
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(167, 139, 250, 0.3);
+        }
+
+        .glass-input option {
+            background: #1f2937;
+            color: white;
+        }
+
+        .glass-header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Tabs Innovadores */
+        .nav-tab {
+            position: relative;
+            color: rgba(255, 255, 255, 0.6);
+            transition: all 0.3s ease;
+        }
+
+        .nav-tab:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-tab.active {
+            color: white;
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40%;
+            height: 3px;
+            background: #a78bfa;
+            border-radius: 3px 3px 0 0;
+        }
+
+        /* Botones modernos */
+        .btn-modern {
+            background: linear-gradient(90deg, #8b5cf6 0%, #ec4899 100%);
+            color: white;
+            font-weight: 600;
+            border: none;
+            box-shadow: 0 4px 15px rgba(236, 72, 153, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .btn-modern:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(236, 72, 153, 0.6);
+        }
+
+        /* Scrollbars */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Estilos del Sidebar MANTENIDO (Dark Mode) */
+        #sidebar {
+            background-color: #111827;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="toast-container"></div>
+    <div id="app" class="flex h-screen overflow-hidden">
+
+        <aside id="sidebar"
+            class="fixed top-0 left-0 h-full text-white p-4 flex flex-col shadow-2xl z-20 w-64 border-r border-gray-800">
+            <div class="text-2xl font-extrabold text-indigo-400 mb-8 border-b border-gray-700 pb-3 px-2">
+                <span class="text-white">Flow</span>desk
+            </div>
+            <nav class="space-y-2 flex-1 overflow-y-auto custom-scrollbar">
+                <a href="{{ url_for('desk') }}"
+                    class="flex items-center space-x-3 p-3 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white transition duration-150">
+                    <i class="fas fa-columns w-5 text-center"></i><span>Tickets</span>
+                </a>
+                <a href="{{ url_for('mis_actividades') }}"
+                    class="flex items-center space-x-3 p-3 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white transition duration-150">
+                    <i class="fas fa-tasks w-5 text-center"></i><span>Mis Actividades</span>
+                </a>
+                <a href="{{ url_for('clientes_new') }}"
+                    class="flex items-center space-x-3 p-3 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white transition duration-150">
+                    <i class="fas fa-users w-5 text-center"></i><span>Usuarios</span>
+                </a>
+                <a href="{{ url_for('empresas') }}"
+                    class="flex items-center space-x-3 p-3 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white transition duration-150">
+                    <i class="fas fa-building w-5 text-center"></i><span>Clientes</span>
+                </a>
+                <a href="{{ url_for('actividad') }}"
+                    class="flex items-center space-x-3 p-3 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white transition duration-150">
+                    <i class="fas fa-plus-circle w-5 text-center"></i><span>Crear Ticket</span>
+                </a>
+                <a href="{{ url_for('reports') }}"
+                    class="flex items-center space-x-3 p-3 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white transition duration-150">
+                    <i class="fas fa-chart-line w-5 text-center"></i><span>Reportes</span>
+                </a>
+                <a href="{{ url_for('settings') }}"
+                    class="flex items-center space-x-3 p-3 rounded-lg text-white bg-indigo-600 shadow-lg">
+                    <i class="fas fa-cog w-5 text-center"></i><span>Ajustes</span>
+                </a>
+            </nav>
+
+            <div class="mt-auto pt-4 border-t border-gray-700 relative h-16 overflow-hidden">
+                <div id="sidebar-footer-content"
+                    class="absolute inset-0 flex items-center justify-center transition-opacity duration-500 ease-in-out">
+                    <span class="text-xl font-bold text-indigo-400 tracking-wider">Flowdesk</span>
+                </div>
+            </div>
+        </aside>
+
+        <div id="main-content" class="flex-grow ml-64 flex flex-col h-full relative z-10">
+
+            <header class="glass-header px-8 py-5 flex justify-between items-center shrink-0">
+                <div>
+                    <h1 class="text-3xl font-bold text-white drop-shadow-md">Configuración</h1>
+                    <p class="text-white/70 text-sm">Administra las preferencias del sistema</p>
+                </div>
+                <a href="{{ url_for('logout') }}"
+                    class="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-red-500/20 hover:bg-red-500/40 border border-red-500/30 rounded-full transition-all hover:scale-105">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Salir</span>
+                </a>
+            </header>
+
+            <div class="px-8 pt-6 pb-0 shrink-0">
+                <div class="flex space-x-2 bg-white/10 p-1 rounded-xl backdrop-blur-md inline-flex">
+                    <button id="tab-smtp"
+                        class="nav-tab active px-6 py-2.5 text-sm font-medium rounded-lg focus:outline-none transition-all">
+                        <i class="fas fa-envelope mr-2"></i>SMTP
+                    </button>
+                    <button id="tab-parametrization"
+                        class="nav-tab px-6 py-2.5 text-sm font-medium rounded-lg focus:outline-none transition-all">
+                        <i class="fas fa-sitemap mr-2"></i>Departamentos
+                    </button>
+                    <button id="tab-attention-flow"
+                        class="nav-tab px-6 py-2.5 text-sm font-medium rounded-lg focus:outline-none transition-all">
+                        <i class="fas fa-stopwatch mr-2"></i>Flujo de Atención
+                    </button>
+                </div>
+            </div>
+
+            <main class="flex-grow overflow-y-auto p-8 custom-scrollbar">
+                <div class="glass-panel rounded-2xl p-8 min-h-full animate-fade-in-up">
+
+                    <div id="smtp-settings-content">
+                        <div class="flex items-center mb-6 border-b border-white/10 pb-4">
+                            <div class="p-3 bg-purple-500/20 rounded-lg mr-4">
+                                <i class="fas fa-paper-plane text-2xl text-purple-300"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-2xl font-bold text-white">Servidor de Correo</h2>
+                                <p class="text-white/60 text-sm">Configura las credenciales para el envío de
+                                    notificaciones.</p>
+                            </div>
+                        </div>
+
+                        {% if error %}
+                        <div
+                            class="glass-card bg-red-500/20 border-red-500/30 text-white px-4 py-3 mb-6 flex items-center">
+                            <i class="fas fa-exclamation-circle mr-3 text-red-300"></i>
+                            <span>{{ error }}</span>
+                        </div>
+                        {% endif %}
+                        {% if success %}
+                        <div
+                            class="glass-card bg-green-500/20 border-green-500/30 text-white px-4 py-3 mb-6 flex items-center">
+                            <i class="fas fa-check-circle mr-3 text-green-300"></i>
+                            <span>{{ success }}</span>
+                        </div>
+                        {% endif %}
+
+                        <form method="POST" class="space-y-6 max-w-3xl">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label for="host" class="block text-sm font-medium text-white/80 mb-2">Host
+                                        SMTP</label>
+                                    <input type="text" id="host" name="host"
+                                        value="{{ smtp_settings.host if smtp_settings else '' }}" required
+                                        class="glass-input block w-full px-4 py-3 rounded-xl sm:text-sm"
+                                        placeholder="smtp.ejemplo.com">
+                                </div>
+                                <div>
+                                    <label for="port"
+                                        class="block text-sm font-medium text-white/80 mb-2">Puerto</label>
+                                    <input type="number" id="port" name="port"
+                                        value="{{ smtp_settings.port if smtp_settings else '' }}" required
+                                        class="glass-input block w-full px-4 py-3 rounded-xl sm:text-sm"
+                                        placeholder="587">
+                                </div>
+                                <div>
+                                    <label for="username"
+                                        class="block text-sm font-medium text-white/80 mb-2">Usuario</label>
+                                    <input type="text" id="username" name="username"
+                                        value="{{ smtp_settings.username if smtp_settings else '' }}" required
+                                        class="glass-input block w-full px-4 py-3 rounded-xl sm:text-sm"
+                                        placeholder="usuario@correo.com">
+                                </div>
+                                <div>
+                                    <label for="password"
+                                        class="block text-sm font-medium text-white/80 mb-2">Contraseña</label>
+                                    <input type="password" id="password" name="password"
+                                        value="{{ smtp_settings.password if smtp_settings else '' }}" required
+                                        class="glass-input block w-full px-4 py-3 rounded-xl sm:text-sm"
+                                        placeholder="••••••••">
+                                </div>
+                            </div>
+
+                            <div class="glass-card p-4 flex gap-6">
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="use_tls" name="use_tls" {% if smtp_settings and
+                                        smtp_settings.use_tls %}checked{% endif %}
+                                        class="w-5 h-5 text-purple-600 bg-gray-700 border-gray-500 rounded focus:ring-purple-500">
+                                    <label for="use_tls"
+                                        class="ml-2 text-sm text-white font-medium cursor-pointer">Activar TLS</label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="use_ssl" name="use_ssl" {% if smtp_settings and
+                                        smtp_settings.use_ssl %}checked{% endif %}
+                                        class="w-5 h-5 text-purple-600 bg-gray-700 border-gray-500 rounded focus:ring-purple-500">
+                                    <label for="use_ssl"
+                                        class="ml-2 text-sm text-white font-medium cursor-pointer">Activar SSL</label>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-end pt-4">
+                                <button type="submit"
+                                    class="btn-modern px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transform transition">
+                                    <i class="fas fa-save mr-2"></i>Guardar Configuración
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div id="parametrization-content" class="hidden">
+                        <div class="flex items-center mb-6 border-b border-white/10 pb-4">
+                            <div class="p-3 bg-blue-500/20 rounded-lg mr-4">
+                                <i class="fas fa-users-cog text-2xl text-blue-300"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-2xl font-bold text-white">Encargados de Departamento</h2>
+                                <p class="text-white/60 text-sm">Asigna responsables para cada área operativa.</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            <div class="lg:col-span-1">
+                                <div class="glass-card p-6 sticky top-6">
+                                    <h3 class="text-lg font-bold text-white mb-4">Añadir Nuevo</h3>
+                                    <form id="add-department-manager-form" class="space-y-4">
+                                        <div>
+                                            <label for="new-department"
+                                                class="block text-sm font-medium text-white/80 mb-2">Departamento</label>
+                                            <input type="text" id="new-department"
+                                                class="glass-input block w-full px-4 py-2.5 rounded-xl sm:text-sm"
+                                                placeholder="Ej: Desarrollo" required>
+                                        </div>
+                                        <div>
+                                            <label for="new-in-charge"
+                                                class="block text-sm font-medium text-white/80 mb-2">Encargado</label>
+                                            <select id="new-in-charge"
+                                                class="glass-input block w-full px-4 py-2.5 rounded-xl sm:text-sm"
+                                                required></select>
+                                        </div>
+                                        <button type="submit" class="w-full btn-modern px-6 py-2.5 rounded-xl mt-2">
+                                            <i class="fas fa-plus mr-2"></i>Asignar
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+
+                            <div class="lg:col-span-2">
+                                <div class="glass-card overflow-hidden">
+                                    <table class="min-w-full text-left text-sm">
+                                        <thead class="bg-white/5 text-white/90 uppercase font-bold text-xs">
+                                            <tr>
+                                                <th scope="col" class="px-6 py-4">Departamento</th>
+                                                <th scope="col" class="px-6 py-4">Encargado</th>
+                                                <th scope="col" class="px-6 py-4 text-right">Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="department-managers-table-body" class="divide-y divide-white/10">
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="attention-flow-content" class="hidden">
+                        <div class="flex items-center mb-6 border-b border-white/10 pb-4">
+                            <div class="p-3 bg-pink-500/20 rounded-lg mr-4">
+                                <i class="fas fa-stopwatch text-2xl text-pink-300"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-2xl font-bold text-white">SLA y Tiempos</h2>
+                                <p class="text-white/60 text-sm">Define los límites de tiempo para cada estado del
+                                    ticket.</p>
+                            </div>
+                        </div>
+
+                        <form id="attention-flow-form" onsubmit="event.preventDefault(); saveAttentionFlow();"
+                            class="max-w-4xl">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="glass-card p-6 hover:bg-white/10 transition">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label for="max_time_new" class="text-lg font-medium text-white">Estado
+                                            Nuevo</label>
+                                        <span
+                                            class="px-2 py-1 bg-blue-500/20 text-blue-200 text-xs rounded-full">Inicial</span>
+                                    </div>
+                                    <div class="relative">
+                                        <input type="number" id="max_time_new" required
+                                            class="glass-input block w-full pl-4 pr-12 py-3 rounded-xl text-xl font-bold"
+                                            placeholder="0">
+                                        <span class="absolute right-4 top-3.5 text-white/50 text-sm">Horas</span>
+                                    </div>
+                                </div>
+
+                                <div class="glass-card p-6 hover:bg-white/10 transition">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label for="max_time_pending" class="text-lg font-medium text-white">Estado
+                                            Pendiente</label>
+                                        <span
+                                            class="px-2 py-1 bg-yellow-500/20 text-yellow-200 text-xs rounded-full">Proceso</span>
+                                    </div>
+                                    <div class="relative">
+                                        <input type="number" id="max_time_pending" required
+                                            class="glass-input block w-full pl-4 pr-12 py-3 rounded-xl text-xl font-bold"
+                                            placeholder="0">
+                                        <span class="absolute right-4 top-3.5 text-white/50 text-sm">Horas</span>
+                                    </div>
+                                </div>
+
+                                <div class="glass-card p-6 hover:bg-white/10 transition">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label for="max_time_testing" class="text-lg font-medium text-white">En
+                                            Pruebas</label>
+                                        <span
+                                            class="px-2 py-1 bg-purple-500/20 text-purple-200 text-xs rounded-full">QA</span>
+                                    </div>
+                                    <div class="relative">
+                                        <input type="number" id="max_time_testing" required
+                                            class="glass-input block w-full pl-4 pr-12 py-3 rounded-xl text-xl font-bold"
+                                            placeholder="0">
+                                        <span class="absolute right-4 top-3.5 text-white/50 text-sm">Horas</span>
+                                    </div>
+                                </div>
+
+                                <div class="glass-card p-6 hover:bg-white/10 transition">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label for="max_time_waiting" class="text-lg font-medium text-white">Esperando
+                                            Respuesta</label>
+                                        <span
+                                            class="px-2 py-1 bg-orange-500/20 text-orange-200 text-xs rounded-full">Cliente</span>
+                                    </div>
+                                    <div class="relative">
+                                        <input type="number" id="max_time_waiting" required
+                                            class="glass-input block w-full pl-4 pr-12 py-3 rounded-xl text-xl font-bold"
+                                            placeholder="0">
+                                        <span class="absolute right-4 top-3.5 text-white/50 text-sm">Horas</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-8 mb-6 border-b border-white/10 pb-4">
+                                <h3 class="text-xl font-bold text-white">SLA por Prioridad</h3>
+                                <p class="text-white/60 text-sm">Define tiempos máximos de inactividad según la
+                                    prioridad del ticket (sobrescribe el tiempo por estado si es mayor a 0).</p>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="glass-card p-6 hover:bg-white/10 transition">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label for="max_time_priority_low"
+                                            class="text-lg font-medium text-white">Prioridad Baja</label>
+                                        <span
+                                            class="px-2 py-1 bg-green-500/20 text-green-200 text-xs rounded-full">Baja</span>
+                                    </div>
+                                    <div class="relative">
+                                        <input type="number" id="max_time_priority_low" required
+                                            class="glass-input block w-full pl-4 pr-12 py-3 rounded-xl text-xl font-bold"
+                                            placeholder="0">
+                                        <span class="absolute right-4 top-3.5 text-white/50 text-sm">Horas</span>
+                                    </div>
+                                </div>
+
+                                <div class="glass-card p-6 hover:bg-white/10 transition">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label for="max_time_priority_medium"
+                                            class="text-lg font-medium text-white">Prioridad Media</label>
+                                        <span
+                                            class="px-2 py-1 bg-blue-500/20 text-blue-200 text-xs rounded-full">Media</span>
+                                    </div>
+                                    <div class="relative">
+                                        <input type="number" id="max_time_priority_medium" required
+                                            class="glass-input block w-full pl-4 pr-12 py-3 rounded-xl text-xl font-bold"
+                                            placeholder="0">
+                                        <span class="absolute right-4 top-3.5 text-white/50 text-sm">Horas</span>
+                                    </div>
+                                </div>
+
+                                <div class="glass-card p-6 hover:bg-white/10 transition">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label for="max_time_priority_high"
+                                            class="text-lg font-medium text-white">Prioridad Alta</label>
+                                        <span
+                                            class="px-2 py-1 bg-orange-500/20 text-orange-200 text-xs rounded-full">Alta</span>
+                                    </div>
+                                    <div class="relative">
+                                        <input type="number" id="max_time_priority_high" required
+                                            class="glass-input block w-full pl-4 pr-12 py-3 rounded-xl text-xl font-bold"
+                                            placeholder="0">
+                                        <span class="absolute right-4 top-3.5 text-white/50 text-sm">Horas</span>
+                                    </div>
+                                </div>
+
+                                <div class="glass-card p-6 hover:bg-white/10 transition">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label for="max_time_priority_critical"
+                                            class="text-lg font-medium text-white">Prioridad Crítica</label>
+                                        <span
+                                            class="px-2 py-1 bg-red-500/20 text-red-200 text-xs rounded-full">Crítica</span>
+                                    </div>
+                                    <div class="relative">
+                                        <input type="number" id="max_time_priority_critical" required
+                                            class="glass-input block w-full pl-4 pr-12 py-3 rounded-xl text-xl font-bold"
+                                            placeholder="0">
+                                        <span class="absolute right-4 top-3.5 text-white/50 text-sm">Horas</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-end mt-8">
+                                <button type="submit"
+                                    class="btn-modern px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transform transition">
+                                    <i class="fas fa-save mr-2"></i>Actualizar Tiempos
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        const api_base_url = '{{ api_base_url | safe }}';
+        const token = '{{ access_token | safe }}';
+
+        // Sidebar Footer Animation
+        document.addEventListener('DOMContentLoaded', function () {
+            const footerContent = document.getElementById('sidebar-footer-content');
+            if (footerContent) {
+                const items = [
+                    '<span class="text-xl font-bold text-indigo-400 tracking-wider">Flowdesk</span>',
+                    '<img src="{{ url_for("static", filename="img/innova_logo.png") }}" alt="Innova" class="h-10 object-contain opacity-80">',
+                    '<img src="{{ url_for("static", filename="img/sap_logo.png") }}" alt="SAP" class="h-10 object-contain opacity-80">',
+                    '<img src="{{ url_for("static", filename="img/odoo_logo.png") }}" alt="Odoo" class="h-10 object-contain opacity-80">',
+                    '<img src="{{ url_for("static", filename="img/hexagon_logo.png") }}" alt="Hexagon" class="h-10 object-contain opacity-80">'
+                ];
+                let currentIndex = 0;
+                setInterval(() => {
+                    footerContent.style.opacity = '0';
+                    setTimeout(() => {
+                        currentIndex = (currentIndex + 1) % items.length;
+                        footerContent.innerHTML = items[currentIndex];
+                        footerContent.style.opacity = '1';
+                    }, 500);
+                }, 3000);
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const tabs = {
+                smtp: document.getElementById('tab-smtp'),
+                parametrization: document.getElementById('tab-parametrization'),
+                attentionFlow: document.getElementById('tab-attention-flow'),
+            };
+
+            const contents = {
+                smtp: document.getElementById('smtp-settings-content'),
+                parametrization: document.getElementById('parametrization-content'),
+                attentionFlow: document.getElementById('attention-flow-content'),
+            };
+
+            function showTab(tabId) {
+                Object.values(tabs).forEach(tab => tab.classList.remove('active'));
+                Object.values(contents).forEach(content => content.classList.add('hidden'));
+
+                tabs[tabId].classList.add('active');
+                contents[tabId].classList.remove('hidden');
+
+                if (tabId === 'parametrization') loadParametrizationData();
+                if (tabId === 'attentionFlow') loadAttentionFlow();
+            }
+
+            Object.keys(tabs).forEach(tabId => {
+                tabs[tabId].addEventListener('click', () => showTab(tabId));
+            });
+
+            showTab('smtp');
+        });
+
+        // --- Parametrization Logic ---
+        async function loadParametrizationData() {
+            await fetchEligibleUsers();
+            await fetchDepartmentManagers();
+        }
+
+        let eligibleUsers = [];
+
+        async function fetchEligibleUsers() {
+            try {
+                const response = await fetch(`${api_base_url}/api/department_managers/eligible_users/`, { headers: { 'Authorization': `Bearer ${token}` } });
+                if (!response.ok) throw new Error('Failed to fetch eligible users.');
+                eligibleUsers = await response.json();
+                populateEligibleUsersDropdown();
+            } catch (error) {
+                console.error('Error fetching eligible users:', error);
+                showToast('Error al cargar usuarios elegibles.', 'error');
+            }
+        }
+
+        function populateEligibleUsersDropdown(selectedValue = null) {
+            const selectElement = document.getElementById('new-in-charge');
+            selectElement.innerHTML = '<option value="">Seleccione un encargado</option>';
+            eligibleUsers.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.id;
+                option.textContent = user.user;
+                if (selectedValue && selectedValue == user.id) option.selected = true;
+                selectElement.appendChild(option);
+            });
+        }
+
+        async function fetchDepartmentManagers() {
+            try {
+                const response = await fetch(`${api_base_url}/api/department_managers/`, { headers: { 'Authorization': `Bearer ${token}` } });
+                if (!response.ok) throw new Error('Failed to fetch department managers.');
+                const data = await response.json();
+                const managers = data.rows || [];
+                populateDepartmentManagersTable(managers);
+            } catch (error) {
+                console.error('Error fetching department managers:', error);
+                showToast('Error al cargar encargados.', 'error');
+            }
+        }
+
+        function populateDepartmentManagersTable(managers) {
+            const tableBody = document.getElementById('department-managers-table-body');
+            tableBody.innerHTML = '';
+            managers.forEach(manager => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-white/5 transition-colors';
+                row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap text-white font-medium">${manager.department}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-white/80">${manager.in_charge_name}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right">
+                            <button onclick="deleteDepartmentManager(${manager.id})" class="text-red-300 hover:text-red-100 bg-red-500/20 hover:bg-red-500/40 px-3 py-1 rounded-lg transition-all text-xs font-semibold">
+                                <i class="fas fa-trash mr-1"></i>Eliminar
+                            </button>
+                        </td>
+                    `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        document.getElementById('add-department-manager-form').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const department = document.getElementById('new-department').value;
+            const inCharge = document.getElementById('new-in-charge').value;
+
+            try {
+                const response = await fetch(`${api_base_url}/api/department_managers/rows/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ department, in_charge_id: parseInt(inCharge) })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Error al añadir encargado.');
+                }
+
+                showToast('Encargado añadido con éxito.', 'success');
+                document.getElementById('add-department-manager-form').reset();
+                await fetchDepartmentManagers();
+            } catch (error) {
+                console.error('Error adding department manager:', error);
+                showToast(`Ocurrió un error: ${error.message}`, 'error');
+            }
+        });
+
+        async function deleteDepartmentManager(id) {
+            if (!await showConfirm('¿Estás seguro de que deseas eliminar este encargado?')) return;
+
+            try {
+                const response = await fetch(`${api_base_url}/api/department_managers/rows/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Failed to delete department manager.');
+
+                showToast('Encargado eliminado con éxito.', 'success');
+                await fetchDepartmentManagers();
+            } catch (error) {
+                console.error('Error deleting department manager:', error);
+                showToast('Error al eliminar encargado.', 'error');
+            }
+        }
+
+        // --- Attention Flow Logic ---
+        async function loadAttentionFlow() {
+            try {
+                const response = await fetch(`${api_base_url}/api/settings/attention-flow`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!response.ok) throw new Error('Failed to fetch settings.');
+
+                const settings = await response.json();
+                document.getElementById('max_time_new').value = settings.max_time_new;
+                document.getElementById('max_time_pending').value = settings.max_time_pending;
+                document.getElementById('max_time_testing').value = settings.max_time_testing;
+                document.getElementById('max_time_waiting').value = settings.max_time_waiting;
+                document.getElementById('max_time_priority_low').value = settings.max_time_priority_low || 0;
+                document.getElementById('max_time_priority_medium').value = settings.max_time_priority_medium || 0;
+                document.getElementById('max_time_priority_high').value = settings.max_time_priority_high || 0;
+                document.getElementById('max_time_priority_critical').value = settings.max_time_priority_critical || 0;
+            } catch (error) {
+                console.error('Error loading attention flow settings:', error);
+                showToast('Error al cargar la configuración.', 'error');
+            }
+        }
+
+        async function saveAttentionFlow() {
+            const settingsData = {
+                max_time_new: parseInt(document.getElementById('max_time_new').value, 10) || 0,
+                max_time_pending: parseInt(document.getElementById('max_time_pending').value, 10) || 0,
+                max_time_testing: parseInt(document.getElementById('max_time_testing').value, 10) || 0,
+                max_time_waiting: parseInt(document.getElementById('max_time_waiting').value, 10) || 0,
+                max_time_priority_low: parseInt(document.getElementById('max_time_priority_low').value, 10) || 0,
+                max_time_priority_medium: parseInt(document.getElementById('max_time_priority_medium').value, 10) || 0,
+                max_time_priority_high: parseInt(document.getElementById('max_time_priority_high').value, 10) || 0,
+                max_time_priority_critical: parseInt(document.getElementById('max_time_priority_critical').value, 10) || 0,
+            };
+
+            try {
+                const response = await fetch(`${api_base_url}/api/settings/attention-flow`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify(settingsData)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Error al guardar la configuración.');
+                }
+                showToast('Configuración guardada con éxito.', 'success');
+            } catch (error) {
+                showToast(`Ocurrió un error: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+
+</html>

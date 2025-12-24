@@ -1,0 +1,28 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #f4f7fa; /* Fondo general más limpio */
+}
+/* Estilos de scrollbar */
+.scrollable::-webkit-scrollbar {
+    width: 8px;
+}
+.scrollable::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1; /* Gris suave */
+    border-radius: 4px;
+}
+.scrollable::-webkit-scrollbar-track {
+    background-color: #f4f7fa;
+}
+/* Estilo para que la barra lateral empuje el contenido */
+#main-content {
+    margin-left: 250px; /* Ancho de la barra lateral */
+    transition: margin-left 0.3s ease;
+}
+#sidebar {
+    width: 250px;
+}
+/* Estilo específico para la tabla */
+.ticket-list-container {
+    min-width: 1000px; /* Asegura que la tabla no sea demasiado estrecha */
+}

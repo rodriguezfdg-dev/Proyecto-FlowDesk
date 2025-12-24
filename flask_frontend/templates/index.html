@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Consultores - Gestión de Tickets</title>
+    <!-- Carga de Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f7fa;
+            /* Fondo general más limpio */
+        }
+
+        /* Estilos de scrollbar */
+        .scrollable::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .scrollable::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            /* Gris suave */
+            border-radius: 4px;
+        }
+
+        .scrollable::-webkit-scrollbar-track {
+            background-color: #f4f7fa;
+        }
+
+        /* Estilo para que la barra lateral empuje el contenido */
+        /* #main-content margin handled by Tailwind ml-64 */
+        /* Estilo específico para la tabla */
+        .ticket-list-container {
+            min-width: 1000px;
+            /* Asegura que la tabla no sea demasiado estrecha */
+        }
+    </style>
+    <!-- Firebase Imports for Etapa 2: Core Development -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, query, doc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        setLogLevel('Debug');
+
+        let app;
+        let db;
+        let auth;
+        window.userId = 'unknown';
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+
+        async function initializeFirebase() {
+            try {
+                if (Object.keys(firebaseConfig).length > 0) {
+                    app = initializeApp(firebaseConfig);
+                    db = getFirestore(app);
+                    auth = getAuth(app);
+
+                    const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+                    if (initialAuthToken) {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+
+                    window.userId = auth.currentUser?.uid || 'anonymous-user';
+                    console.log(`Firebase initialized. User ID: ${window.userId}`);
+
+                    // Public collection path for shared tickets
+                    window.TICKETS_COLLECTION_PATH = `/artifacts/${appId}/public/data/tickets`;
+                    document.getElementById('user-display').textContent = window.userId === 'anonymous-user' ? 'Anónimo' : window.userId.substring(0, 8) + '...';
+
+                    // Start rendering the ticket list
+                    window.renderTicketList();
+                } else {
+                    console.warn("Firebase configuration missing. Running in mock data mode only.");
+                    document.getElementById('user-display').textContent = 'MockUser';
+                    window.renderTicketList();
+                }
+            } catch (error) {
+                console.error("Error during Firebase initialization or sign-in:", error);
+                window.showModal('Error Crítico', 'No se pudo conectar con el servicio de autenticación.');
+            }
+        }
+
+        // Exponer la función de inicialización globalmente
+        window.initializeFirebase = initializeFirebase;
+
+    </script>
+</head>
+
+<body onload="initializeFirebase()">
+
+    <div id="app" class="min-h-screen flex">
+
+        <!-- 1. Barra Lateral (Sidebar) - Estilo Profesional -->
+        <!-- 1. Barra Lateral (Sidebar) - Estilo Profesional -->
+                <!-- Sidebar -->
+                <!-- Sidebar -->
+                <!-- Sidebar -->
+        <aside id="sidebar" class="fixed top-0 left-0 h-full bg-gray-800 text-white p-4 flex flex-col shadow-2xl z-20 w-64">
+            <div class="text-2xl font-extrabold text-indigo-400 mb-8 border-b border-gray-700 pb-3">
+                <span class="text-white">Flow</span>desk
+            </div>
+            <nav class="space-y-2">
+                <a href="{{ url_for('desk') }}" class="flex items-center space-x-3 p-3 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white transition duration-150">
+                    <i class="fas fa-columns w-5 text-center"></i>
+                    <span>Tickets</span>
+                </a>
+                <a href="{{ url_for('mis_actividades') }}" class="flex items-center space-x-3 p-3 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white transition duration-150">
+                    <i class="fas fa-tasks w-5 text-center"></i>
+                    <span>Mis Actividades</span>
+                </a>
+                <a href="{{ url_for('clientes_new') }}" class="flex items-center space-x-3 p-3 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white transition duration-150">
+                    <i class="fas fa-users w-5 text-center"></i>
+                    <span>Usuarios</span>
+                </a>
+                <a href="{{ url_for('empresas') }}" class="flex items-center space-x-3 p-3 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white transition duration-150">
+                    <i class="fas fa-building w-5 text-center"></i>
+                    <span>Clientes</span>
+                </a>
+                <a href="{{ url_for('actividad') }}" class="flex items-center space-x-3 p-3 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white transition duration-150">
+                    <i class="fas fa-plus-circle w-5 text-center"></i>
+                    <span>Crear Ticket</span>
+                </a>
+                <a href="{{ url_for('reports') }}" class="flex items-center space-x-3 p-3 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white transition duration-150">
+                    <i class="fas fa-chart-line w-5 text-center"></i>
+                    <span>Reportes</span>
+                </a>
+                <a href="{{ url_for('settings') }}" class="flex items-center space-x-3 p-3 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white transition duration-150">
+                    <i class="fas fa-cog w-5 text-center"></i>
+                    <span>Ajustes</span>
+                </a>
+            </nav>
+            
+            <!-- Animated Footer -->
+            <div class="mt-auto pt-4 border-t border-gray-700 relative h-16 overflow-hidden">
+                <!-- Content Container -->
+                <div id="sidebar-footer-content" class="absolute inset-0 flex items-center justify-center transition-opacity duration-500 ease-in-out">
+                    <!-- Initial Content: Text -->
+                    <span class="text-xl font-bold text-indigo-400 tracking-wider">Flowdesk</span>
+                </div>
+            </div>
+            
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    const footerContent = document.getElementById('sidebar-footer-content');
+                    if (!footerContent) return;
+
+                    const items = [
+                        '<span class="text-xl font-bold text-indigo-400 tracking-wider">Flowdesk</span>',
+                        '<img src="{{ url_for("static", filename="img/innova_logo.png") }}" alt="Innova" class="h-10 object-contain">',
+                        '<img src="{{ url_for("static", filename="img/sap_logo.png") }}" alt="SAP" class="h-10 object-contain">',
+                        '<img src="{{ url_for("static", filename="img/odoo_logo.png") }}" alt="Odoo" class="h-10 object-contain">',
+                        '<img src="{{ url_for("static", filename="img/hexagon_logo.png") }}" alt="Hexagon" class="h-10 object-contain">'
+                    ];
+
+                    let currentIndex = 0;
+
+                    setInterval(() => {
+                        // Fade out
+                        footerContent.style.opacity = '0';
+                        
+                        setTimeout(() => {
+                            // Update index and content
+                            currentIndex = (currentIndex + 1) % items.length;
+                            footerContent.innerHTML = items[currentIndex];
+                            
+                            // Fade in
+                            footerContent.style.opacity = '1';
+                        }, 500); // Wait for fade out to complete
+                    }, 3000); // Toggle every 3 seconds
+                });
+            </script>
+        </aside>
+
+        <!-- 2. Contenido Principal (Header + Lista de Tickets) -->
+        <!-- 2. Contenido Principal (Header + Lista de Tickets) -->
+        <div id="main-content" class="flex-grow ml-64 min-h-screen flex flex-col">
+            <!-- Cabecera del Panel - Más limpia -->
+            <header class="w-full bg-white shadow-sm p-4 border-b border-gray-100 sticky top-0 z-10">
+                <div class="flex justify-between items-center pr-4">
+                    <div class="flex items-center space-x-4">
+                        <div class="flex space-x-1 bg-gray-200 p-1 rounded-lg">
+                            <a href="{{ url_for('desk') }}"
+                                class="px-4 py-1 text-sm font-semibold text-white bg-indigo-600 rounded-md">Vista
+                                Detallada</a>
+                            <a href="{{ url_for('gallery') }}"
+                                class="px-4 py-1 text-sm font-semibold text-gray-700 hover:bg-gray-300 rounded-md">Vista
+                                Galeria</a>
+                        </div>
+                        <h1 class="text-xl font-semibold text-gray-800">Tickets Asignados (Lista)</h1>
+                        <div class="relative">
+                            <input type="text" id="search-input" placeholder="Buscar tickets..."
+                                class="pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                onkeyup="renderTicketList()">
+                            <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+                                fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </div>
+                        <button id="toggle-filters-btn"
+                            class="flex items-center space-x-2 text-gray-700 hover:text-indigo-600 transition duration-150">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM12 11h.01M8 11h.01M16 11h.01M4 15h16M4 19h16">
+                                </path>
+                            </svg>
+                            <span class="text-sm">Filtros</span>
+                        </button>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <span class="text-sm text-gray-600 px-3 py-1 bg-yellow-100 rounded-full font-medium">
+                            Rol: Consultor
+                        </span>
+                        <a href="{{ url_for('logout') }}"
+                            class="flex items-center space-x-2 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-150">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1">
+                                </path>
+                            </svg>
+                            <span class="text-sm">Salir</span>
+                        </a>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Filter Section -->
+            <div id="filter-section" class="bg-white shadow-sm p-4 border-b border-gray-100 hidden">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                        <label for="filter-client-id" class="block text-sm font-medium text-gray-700">ID Cliente</label>
+                        <div class="relative">
+                            <input type="text" id="filter-client-id"
+                                class="mt-1 block w-full px-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                                oninput="debounceClientSearch()">
+                            <div id="client-suggestions"
+                                class="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg mt-1 hidden">
+                                <!-- Suggestions will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="filter-status" class="block text-sm font-medium text-gray-700">Estado</label>
+                        <select id="filter-status"
+                            class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                            <option value="">Todos</option>
+                            <option value="Nuevo">Nuevo</option>
+                            <option value="Pendiente">Pendiente</option>
+                            <option value="En proceso">En proceso</option>
+                            <option value="En pruebas">En pruebas</option>
+                            <option value="Cerrado">Cerrado</option>
+                            <option value="Esperando respuesta">Esperando respuesta</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="filter-priority" class="block text-sm font-medium text-gray-700">Prioridad</label>
+                        <select id="filter-priority"
+                            class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                            <option value="">Todas</option>
+                            <option value="Baja">Baja</option>
+                            <option value="Media">Media</option>
+                            <option value="Alta">Alta</option>
+                            <option value="Crítica">Crítica</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="filter-start-date" class="block text-sm font-medium text-gray-700">Fecha
+                            Inicio</label>
+                        <input type="date" id="filter-start-date"
+                            class="mt-1 block w-full px-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label for="filter-end-date" class="block text-sm font-medium text-gray-700">Fecha Fin</label>
+                        <input type="date" id="filter-end-date"
+                            class="mt-1 block w-full px-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                </div>
+                <div class="mt-4 flex justify-end space-x-2">
+                    <button id="clear-filters-btn"
+                        class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition duration-150">Limpiar
+                        Filtros</button>
+                    <button id="apply-filters-btn"
+                        class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition duration-150">Aplicar
+                        Filtros</button>
+                </div>
+            </div>
+
+            <!-- Contenedor Principal de la Lista (con scroll horizontal si es necesario) -->
+            <main class="flex-grow overflow-x-auto p-6">
+                <div class="ticket-list-container bg-white rounded-xl shadow-lg overflow-hidden">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col"
+                                    class="p-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/4">
+                                    Cliente / Asunto</th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    ID</th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Prioridad</th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Estado</th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Asignado a</th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ticket-table-body" class="bg-white divide-y divide-gray-200">
+                            <!-- Las filas de tickets se renderizarán aquí -->
+                            <tr>
+                                <td colspan="6" class="p-6 text-center text-gray-500">Cargando tickets...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </main>
+        </div>
+
+
+
+        <!-- Modal de Notificación Personalizado (reemplaza alert()) -->
+        <div id="custom-modal"
+            class="fixed inset-0 bg-gray-600 bg-opacity-75 hidden items-center justify-center p-4 z-50">
+            <div class="bg-white p-6 rounded-xl shadow-2xl max-w-sm w-full">
+                <h3 id="modal-title" class="text-lg font-semibold text-gray-800 mb-3">Notificación</h3>
+                <p id="modal-body" class="text-gray-600 mb-4"></p>
+                <button onclick="closeGenericModal()"
+                    class="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition duration-150">Cerrar</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Simulación de las horas de trabajo
+        window.hoursLog = [];
+
+        // --- Utility Functions ---
+
+        // Reemplazo de alert()
+        function showModal(title, body) {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-body').textContent = body;
+            document.getElementById('custom-modal').classList.remove('hidden');
+            document.getElementById('custom-modal').classList.add('flex');
+        }
+
+        function closeGenericModal() {
+            document.getElementById('custom-modal').classList.add('hidden');
+            document.getElementById('custom-modal').classList.remove('flex');
+        }
+
+        // Estilos para los badges de prioridad
+        function getPriorityBadge(priority) {
+            let colorClasses = '';
+            switch (priority) {
+                case 'Crítica':
+                    colorClasses = 'bg-red-600 text-white';
+                    break;
+                case 'Alta':
+                    colorClasses = 'bg-red-100 text-red-800';
+                    break;
+                case 'Media':
+                    colorClasses = 'bg-yellow-100 text-yellow-800';
+                    break;
+                case 'Baja':
+                    colorClasses = 'bg-gray-200 text-gray-700';
+                    break;
+                default:
+                    colorClasses = 'bg-gray-100 text-gray-800';
+            }
+            return `<span class="px-2 py-0.5 text-xs font-semibold rounded-full ${colorClasses}">${priority}</span>`;
+        }
+
+        // Estilos de color para el estado (Status)
+        function getStatusBadge(status) {
+            let colorClasses = '';
+            switch (status) {
+                case 'Nuevo':
+                    colorClasses = 'bg-blue-100 text-blue-800';
+                    break;
+                case 'Pendiente':
+                    colorClasses = 'bg-gray-100 text-gray-800';
+                    break;
+                case 'En Proceso':
+                    colorClasses = 'bg-indigo-100 text-indigo-800';
+                    break;
+                case 'Pendiente Cliente':
+                    colorClasses = 'bg-yellow-100 text-yellow-800';
+                    break;
+                case 'Completado':
+                    colorClasses = 'bg-green-100 text-green-800';
+                    break;
+                default:
+                    colorClasses = 'bg-gray-100 text-gray-800';
+            }
+            return `<span class="px-2 py-1 text-xs font-medium rounded-full ${colorClasses}">${status}</span>`;
+        }
+
+
+
+
+        // Renderiza la lista de tickets en formato de tabla
+        window.renderTicketList = async function () {
+            const tbody = document.getElementById('ticket-table-body');
+            tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-gray-500">Cargando tickets...</td></tr>';
+
+            const searchTerm = document.getElementById('search-input').value;
+            const filterClientId = document.getElementById('filter-client-id').value;
+            const filterStatus = document.getElementById('filter-status').value;
+            const filterPriority = document.getElementById('filter-priority').value;
+            const filterStartDate = document.getElementById('filter-start-date').value;
+            const filterEndDate = document.getElementById('filter-end-date').value;
+
+            let apiUrl = 'http://127.0.0.1:8000/api/cards/';
+            const queryParams = [];
+
+            if (searchTerm) {
+                queryParams.push(`search_term=${encodeURIComponent(searchTerm)}`);
+            }
+            if (filterClientId) {
+                queryParams.push(`client_id=${encodeURIComponent(filterClientId)}`);
+            }
+            if (filterStatus) {
+                queryParams.push(`status=${encodeURIComponent(filterStatus)}`);
+            }
+            if (filterPriority) {
+                queryParams.push(`priority=${encodeURIComponent(filterPriority)}`);
+            }
+            if (filterStartDate) {
+                queryParams.push(`start_date=${encodeURIComponent(filterStartDate)}`);
+            }
+            if (filterEndDate) {
+                queryParams.push(`end_date=${encodeURIComponent(filterEndDate)}`);
+            }
+
+            if (queryParams.length > 0) {
+                apiUrl += `?${queryParams.join('&')}`;
+            }
+
+            try {
+                const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                const tickets = await response.json();
+
+                tbody.innerHTML = ''; // Limpiar la tabla
+
+                if (tickets.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-gray-500">¡No hay tickets asignados!</td></tr>';
+                    return;
+                }
+
+                tickets.forEach(ticket => {
+                    const row = document.createElement('tr');
+                    row.className = `bg-white border-b hover:bg-gray-50 cursor-pointer transition duration-150`;
+
+                    let statusIndicator = '';
+                    if (ticket.AdditionalHoursStatus) {
+                        let indicatorColor = 'bg-gray-300'; // Default color
+                        switch (ticket.AdditionalHoursStatus) {
+                            case 'Aprobado':
+                                indicatorColor = 'bg-green-500';
+                                break;
+                            case 'Pendiente de Aprobacion':
+                                indicatorColor = 'bg-blue-500';
+                                break;
+                            case 'Rechazado':
+                                indicatorColor = 'bg-red-500';
+                                break;
+                        }
+                        statusIndicator = `<div class="w-2 h-2 rounded-full ${indicatorColor} ml-2"></div>`;
+                    }
+
+                    // Correctly set the onclick handler to use internalId
+                    row.setAttribute('onclick', `window.location.href = '/actividad?id=${ticket.internalId}'`);
+
+                    const clientName = ticket.CustName || ticket.CustCode || 'N/A';
+                    const clientInitials = clientName.substring(0, 2).toUpperCase();
+
+                    row.innerHTML = `
+                        <!-- Cliente / Asunto -->
+                        <td class="p-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            <div class="flex items-center">
+                                 <div class="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-semibold mr-4">
+                                    ${clientInitials}
+                                </div>
+                                ${statusIndicator}
+                                <div>
+                                    <p class="text-sm font-semibold text-gray-900">${ticket.Name}</p>
+                                    <p class="text-xs text-gray-500">${clientName}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <!-- ID -->
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-mono">#${ticket.internalId}</td>
+                        <!-- Prioridad -->
+                        <td class="px-6 py-4 whitespace-nowrap">${getPriorityBadge(ticket.Priority)}</td>
+                        <!-- Estado -->
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${ticket.State || 'N/A'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${ticket.Assign || 'Sin asignar'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <a href="/detalle_ticket?id=${ticket.internalId}" class="text-indigo-600 hover:text-indigo-900 mr-4">Ver</a>
+                            <a href="/editar_ticket?id=${ticket.internalId}" class="text-yellow-600 hover:text-yellow-900">Editar</a>
+                        </td>
+                        <!-- Fecha -->
+                        <td class="px-6 py-4 whitespace-nowrap text-xs text-gray-500">${new Date(ticket.Date).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                    `;
+
+                    tbody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error fetching tickets:', error);
+                tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-red-500">Error al cargar los tickets.</td></tr>';
+            }
+        }
+
+        let clientSearchTimeout;
+        const clientInput = document.getElementById('filter-client-id');
+        const clientSuggestionsDiv = document.getElementById('client-suggestions');
+
+        function debounceClientSearch() {
+            clearTimeout(clientSearchTimeout);
+            clientSearchTimeout = setTimeout(fetchClientSuggestions, 300);
+        }
+
+        async function fetchClientSuggestions() {
+            const query = clientInput.value;
+            if (query.length < 2) { // Only search if at least 2 characters are typed
+                clientSuggestionsDiv.classList.add('hidden');
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://127.0.0.1:8000/clientes/search/?q=${encodeURIComponent(query)}`);
+                if (!response.ok) {
+                    throw new Error('Error fetching client suggestions');
+                }
+                const suggestions = await response.json();
+                displayClientSuggestions(suggestions);
+            } catch (error) {
+                console.error('Client search error:', error);
+                clientSuggestionsDiv.classList.add('hidden');
+            }
+        }
+
+        function displayClientSuggestions(suggestions) {
+            clientSuggestionsDiv.innerHTML = '';
+            if (suggestions.length === 0) {
+                clientSuggestionsDiv.classList.add('hidden');
+                return;
+            }
+
+            suggestions.forEach(client => {
+                const suggestionItem = document.createElement('div');
+                suggestionItem.className = 'p-2 cursor-pointer hover:bg-gray-100';
+                suggestionItem.textContent = `${client.razon_social} (${client.code})`;
+                suggestionItem.onclick = () => selectClientSuggestion(client.code);
+                clientSuggestionsDiv.appendChild(suggestionItem);
+            });
+            clientSuggestionsDiv.classList.remove('hidden');
+        }
+
+        function selectClientSuggestion(clientCode) {
+            clientInput.value = clientCode;
+            clientSuggestionsDiv.classList.add('hidden');
+            renderTicketList(); // Re-render list with selected client filter
+        }
+
+        // Hide suggestions when clicking outside
+        document.addEventListener('click', function (event) {
+            if (!clientInput.contains(event.target) && !clientSuggestionsDiv.contains(event.target)) {
+                clientSuggestionsDiv.classList.add('hidden');
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const toggleFiltersBtn = document.getElementById('toggle-filters-btn');
+            const filterSection = document.getElementById('filter-section');
+            const applyFiltersBtn = document.getElementById('apply-filters-btn');
+            const clearFiltersBtn = document.getElementById('clear-filters-btn');
+            const searchInput = document.getElementById('search-input');
+
+            toggleFiltersBtn.addEventListener('click', function () {
+                filterSection.classList.toggle('hidden');
+            });
+
+            applyFiltersBtn.addEventListener('click', function () {
+                renderTicketList();
+            });
+
+            clearFiltersBtn.addEventListener('click', function () {
+                document.getElementById('filter-client-id').value = '';
+                document.getElementById('filter-status').value = '';
+                document.getElementById('filter-priority').value = '';
+                document.getElementById('filter-start-date').value = '';
+                document.getElementById('filter-end-date').value = '';
+                searchInput.value = ''; // Clear search input as well
+                renderTicketList();
+            });
+        });
+    </script>
+</body>
+
+</html>

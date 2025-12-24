@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reportes Operativos - Flowdesk</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/toast.css') }}">
+    <script src="{{ url_for('static', filename='js/toast.js') }}"></script>
+    <style>
+        /* --- ESTILO CORPORATIVO CLARO (PROFESIONAL) --- */
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #f3f4f6;
+            /* Gris muy suave de fondo */
+            color: #1f2937;
+            /* Texto gris oscuro (casi negro) */
+            min-height: 100vh;
+        }
+
+        /* Sidebar: Mantenemos oscuro para contraste profesional */
+        .serious-sidebar {
+            background-color: #111827;
+            /* Dark Gray / Black */
+            box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
+            border-right: 1px solid #1f2937;
+        }
+
+        /* Header: Blanco limpio */
+        .serious-header {
+            background-color: #ffffff;
+            border-bottom: 1px solid #e5e7eb;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Título del header en color oscuro */
+        .serious-header h1 {
+            color: #111827;
+        }
+
+        /* Paneles y Cards: Blancos con bordes sutiles */
+        .serious-panel {
+            background-color: #ffffff;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e5e7eb;
+        }
+
+        .serious-card {
+            background-color: #ffffff;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
+        }
+
+        /* Inputs: Fondo gris muy claro, texto oscuro */
+        .serious-input {
+            background-color: #f9fafb;
+            border: 1px solid #d1d5db;
+            color: #1f2937;
+            transition: all 0.2s;
+        }
+
+        .serious-input:focus {
+            background-color: #ffffff;
+            border-color: #4f46e5;
+            /* Indigo */
+            ring: 2px solid #e0e7ff;
+            outline: none;
+        }
+
+        .serious-input option {
+            background: #ffffff;
+            color: #1f2937;
+        }
+
+        /* Scrollbars */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f3f4f6;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Tabs */
+        .tab-btn {
+            color: #6b7280;
+            /* Gris medio */
+            border-bottom: 2px solid transparent;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn:hover {
+            color: #111827;
+            background: #e5e7eb;
+        }
+
+        .tab-btn.active {
+            color: #4f46e5;
+            /* Indigo corporativo */
+            border-bottom-color: #4f46e5;
+            background: #eef2ff;
+            /* Indigo muy suave */
+        }
+
+        /* Tablas */
+        .serious-table thead th {
+            background: #f9fafb;
+            /* Gris muy claro */
+            color: #374151;
+            font-weight: 600;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .serious-table tbody tr {
+            border-bottom: 1px solid #f3f4f6;
+            transition: background 0.2s;
+        }
+
+        .serious-table tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        .serious-table td {
+            color: #4b5563;
+        }
+
+        /* Ajuste de enlaces en tablas */
+        .serious-table a {
+            color: #4f46e5;
+            font-weight: 500;
+        }
+
+        .serious-table a:hover {
+            color: #4338ca;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="toast-container"></div>
+    <div id="app" class="flex h-screen overflow-hidden">
+
+        <aside id="sidebar" class="serious-sidebar w-64 flex flex-col shadow-2xl z-20 transition-all duration-300">
+            <div class="h-20 flex items-center px-8 border-b border-gray-700/50">
+                <div class="text-3xl font-bold text-white tracking-tight">
+                    Flow<span class="text-indigo-400">desk</span>
+                </div>
+            </div>
+
+            <nav class="flex-1 overflow-y-auto py-6 px-4 space-y-2">
+                <a href="{{ url_for('desk') }}"
+                    class="flex items-center px-4 py-3 rounded-xl text-gray-300 hover:bg-gray-800 hover:text-white transition-all group">
+                    <i class="fas fa-columns w-6 text-center group-hover:scale-110 transition-transform"></i>
+                    <span class="ml-3 font-medium">Tickets</span>
+                </a>
+                <a href="{{ url_for('mis_actividades') }}"
+                    class="flex items-center px-4 py-3 rounded-xl text-gray-300 hover:bg-gray-800 hover:text-white transition-all group">
+                    <i class="fas fa-tasks w-6 text-center group-hover:scale-110 transition-transform"></i>
+                    <span class="ml-3 font-medium">Mis Actividades</span>
+                </a>
+                <a href="{{ url_for('clientes_new') }}"
+                    class="flex items-center px-4 py-3 rounded-xl text-gray-300 hover:bg-gray-800 hover:text-white transition-all group">
+                    <i class="fas fa-users w-6 text-center group-hover:scale-110 transition-transform"></i>
+                    <span class="ml-3 font-medium">Usuarios</span>
+                </a>
+                <a href="{{ url_for('empresas') }}"
+                    class="flex items-center px-4 py-3 rounded-xl text-gray-300 hover:bg-gray-800 hover:text-white transition-all group">
+                    <i class="fas fa-building w-6 text-center group-hover:scale-110 transition-transform"></i>
+                    <span class="ml-3 font-medium">Clientes</span>
+                </a>
+                <a href="{{ url_for('actividad') }}"
+                    class="flex items-center px-4 py-3 rounded-xl text-gray-300 hover:bg-gray-800 hover:text-white transition-all group">
+                    <i class="fas fa-plus-circle w-6 text-center group-hover:scale-110 transition-transform"></i>
+                    <span class="ml-3 font-medium">Crear Ticket</span>
+                </a>
+                <a href="{{ url_for('reports') }}"
+                    class="flex items-center px-4 py-3 rounded-xl text-white bg-indigo-600 shadow-lg border border-indigo-500/30 transition-all group">
+                    <i class="fas fa-chart-line w-6 text-center group-hover:scale-110 transition-transform"></i>
+                    <span class="ml-3 font-medium">Reportes</span>
+                </a>
+                <a href="{{ url_for('settings') }}"
+                    class="flex items-center px-4 py-3 rounded-xl text-gray-300 hover:bg-gray-800 hover:text-white transition-all group">
+                    <i class="fas fa-cog w-6 text-center group-hover:scale-110 transition-transform"></i>
+                    <span class="ml-3 font-medium">Ajustes</span>
+                </a>
+            </nav>
+
+            <div class="p-6 border-t border-gray-700/50 bg-gray-900/50">
+                <div id="sidebar-footer-content"
+                    class="h-10 flex items-center justify-center transition-opacity duration-500">
+                    <span class="text-lg font-bold text-gray-400 tracking-wider">Flowdesk</span>
+                </div>
+            </div>
+        </aside>
+
+        <div id="main-content" class="flex-grow flex flex-col h-full relative z-10 overflow-hidden">
+            <header class="serious-header px-8 py-4 flex justify-between items-center shrink-0">
+                <h1 class="text-2xl font-bold tracking-tight">Reportes Operativos</h1>
+                <a href="{{ url_for('logout') }}"
+                    class="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg transition-colors">
+                    <span>Salir</span>
+                    <i class="fas fa-sign-out-alt"></i>
+                </a>
+            </header>
+
+            <div class="px-8 pt-6 pb-0 shrink-0">
+                <div class="flex space-x-1 border-b border-gray-200">
+                    <button id="tab-activities"
+                        class="tab-btn active py-3 px-6 text-sm rounded-t-lg focus:outline-none">Actividades</button>
+                    <button id="tab-support-hours"
+                        class="tab-btn py-3 px-6 text-sm rounded-t-lg focus:outline-none">Horas de
+                        Soporte</button>
+                    <button id="tab-additional-hours"
+                        class="tab-btn py-3 px-6 text-sm rounded-t-lg focus:outline-none">Horas
+                        Adicionales</button>
+                    <button id="tab-global-activities"
+                        class="tab-btn py-3 px-6 text-sm rounded-t-lg focus:outline-none">Reporte
+                        Global</button>
+                </div>
+            </div>
+
+            <main class="flex-grow overflow-y-auto p-8 custom-scrollbar">
+
+                <div id="content-activities" class="serious-panel rounded-b-xl rounded-tr-xl p-8 animate-fade-in-up">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-6">Actividades por Usuario (Mes Actual)</h2>
+                    <div class="serious-card p-6 flex flex-col md:flex-row items-center justify-center gap-12 bg-white">
+                        <div style="width: 350px; height: 350px;">
+                            <canvas id="activities-by-user-chart"></canvas>
+                        </div>
+                        <div id="chart-legend" class="flex flex-col space-y-3 text-gray-600">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="content-support-hours"
+                    class="hidden serious-panel rounded-b-xl rounded-tr-xl p-8 animate-fade-in-up">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-6">Horas de Soporte por Cliente</h2>
+
+                    <div class="mb-8 max-w-md">
+                        <label for="client-select" class="block text-sm font-medium text-gray-600 mb-2">Seleccionar
+                            Cliente</label>
+                        <select id="client-select"
+                            class="serious-input block w-full px-4 py-2.5 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500">
+                            <option value="">Seleccione un cliente...</option>
+                        </select>
+                    </div>
+
+                    <div id="client-stats" class="hidden grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div class="serious-card p-6 border-l-4 border-blue-500">
+                            <h3 class="text-xs font-bold text-blue-600 uppercase tracking-wider">Horas Contratadas</h3>
+                            <p class="mt-2 text-3xl font-bold text-gray-800" id="stat-contracted">0.00</p>
+                        </div>
+                        <div class="serious-card p-6 border-l-4 border-purple-500">
+                            <h3 class="text-xs font-bold text-purple-600 uppercase tracking-wider">Horas Consumidas</h3>
+                            <p class="mt-2 text-3xl font-bold text-gray-800" id="stat-consumed">0.00</p>
+                        </div>
+                        <div class="serious-card p-6 border-l-4 border-green-500" id="balance-card">
+                            <h3 class="text-xs font-bold text-green-600 uppercase tracking-wider">Balance</h3>
+                            <p class="mt-2 text-3xl font-bold text-gray-800" id="stat-balance">0.00</p>
+                        </div>
+                    </div>
+
+                    <div id="client-stats-placeholder"
+                        class="text-center py-12 text-gray-400 serious-card border-dashed border-gray-300">
+                        Seleccione un cliente para ver sus estadísticas.
+                    </div>
+
+                    <div id="support-hours-details-container" class="hidden mt-8">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Detalle de Actividades</h3>
+                        <div class="serious-card overflow-hidden">
+                            <table class="min-w-full serious-table">
+                                <thead>
+                                    <tr>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">
+                                            Consultor</th>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">
+                                            Proyecto</th>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-right text-xs font-bold uppercase tracking-wider">
+                                            Horas Consumidas</th>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-right text-xs font-bold uppercase tracking-wider">
+                                            Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="support-hours-table-body">
+                                </tbody>
+                            </table>
+                        </div>
+                        <div id="support-hours-details-placeholder" class="hidden text-center py-8 text-gray-400">
+                            No se encontraron actividades para este cliente.
+                        </div>
+                    </div>
+                </div>
+
+                <div id="content-additional-hours"
+                    class="hidden serious-panel rounded-b-xl rounded-tr-xl p-8 animate-fade-in-up">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-6">Horas Adicionales Aprobadas</h2>
+
+                    <div class="mb-8 max-w-md">
+                        <label for="client-select-additional"
+                            class="block text-sm font-medium text-gray-600 mb-2">Seleccionar Cliente</label>
+                        <select id="client-select-additional"
+                            class="serious-input block w-full px-4 py-2.5 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500">
+                            <option value="">Seleccione un cliente...</option>
+                        </select>
+                    </div>
+
+                    <div id="additional-hours-stats" class="hidden">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                            <div class="serious-card p-6 border-l-4 border-blue-500">
+                                <h3 class="text-xs font-bold text-blue-600 uppercase tracking-wider">Total Aprobadas
+                                </h3>
+                                <p class="mt-2 text-3xl font-bold text-gray-800" id="ah-total-approved">0.00</p>
+                            </div>
+                            <div class="serious-card p-6 border-l-4 border-purple-500">
+                                <h3 class="text-xs font-bold text-purple-600 uppercase tracking-wider">Total Consumidas
+                                </h3>
+                                <p class="mt-2 text-3xl font-bold text-gray-800" id="ah-total-consumed">0.00</p>
+                            </div>
+                            <div class="serious-card p-6 border-l-4 border-green-500" id="ah-balance-card">
+                                <h3 class="text-xs font-bold text-green-600 uppercase tracking-wider">Balance Total</h3>
+                                <p class="mt-2 text-3xl font-bold text-gray-800" id="ah-total-balance">0.00</p>
+                            </div>
+                        </div>
+
+                        <div class="serious-card overflow-hidden">
+                            <table class="min-w-full serious-table">
+                                <thead>
+                                    <tr>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">
+                                            Ticket ID</th>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">
+                                            Título</th>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">
+                                            Estado</th>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-right text-xs font-bold uppercase tracking-wider">
+                                            Aprobadas</th>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-right text-xs font-bold uppercase tracking-wider">
+                                            Consumidas</th>
+                                        <th scope="col"
+                                            class="px-6 py-3 text-right text-xs font-bold uppercase tracking-wider">
+                                            Balance</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="additional-hours-table-body">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="additional-hours-placeholder"
+                        class="text-center py-12 text-gray-400 serious-card border-dashed border-gray-300">
+                        Seleccione un cliente para ver el reporte de horas adicionales.
+                    </div>
+                </div>
+
+                <div id="content-global-activities"
+                    class="hidden serious-panel rounded-b-xl rounded-tr-xl p-8 animate-fade-in-up">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-6">Reporte Global de Actividades</h2>
+
+                    <div id="global-activity-filters" class="mb-8 p-6 serious-card bg-gray-50/50">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+                            <div>
+                                <label for="ga-start-date" class="block text-sm font-medium text-gray-600 mb-1">Fecha
+                                    Desde</label>
+                                <input type="date" id="ga-start-date"
+                                    class="serious-input block w-full px-3 py-2 rounded-lg text-sm">
+                            </div>
+                            <div>
+                                <label for="ga-end-date" class="block text-sm font-medium text-gray-600 mb-1">Fecha
+                                    Hasta</label>
+                                <input type="date" id="ga-end-date"
+                                    class="serious-input block w-full px-3 py-2 rounded-lg text-sm">
+                            </div>
+                            <div>
+                                <label for="ga-client-select"
+                                    class="block text-sm font-medium text-gray-600 mb-1">Cliente</label>
+                                <select id="ga-client-select"
+                                    class="serious-input block w-full px-3 py-2 rounded-lg text-sm">
+                                    <option value="">Todos</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="ga-user-select"
+                                    class="block text-sm font-medium text-gray-600 mb-1">Consultor</label>
+                                <select id="ga-user-select"
+                                    class="serious-input block w-full px-3 py-2 rounded-lg text-sm">
+                                    <option value="">Todos</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="ga-ticket-id" class="block text-sm font-medium text-gray-600 mb-1">Nro de
+                                    Ticket</label>
+                                <input type="number" id="ga-ticket-id"
+                                    class="serious-input block w-full px-3 py-2 rounded-lg text-sm">
+                            </div>
+                            <div>
+                                <label for="ga-is-additional"
+                                    class="block text-sm font-medium text-gray-600 mb-1">Trabajo Adicional</label>
+                                <select id="ga-is-additional"
+                                    class="serious-input block w-full px-3 py-2 rounded-lg text-sm">
+                                    <option value="">Todos</option>
+                                    <option value="true">Sí</option>
+                                    <option value="false">No</option>
+                                </select>
+                            </div>
+                            <div class="col-span-1 md:col-span-2 flex space-x-3">
+                                <button id="ga-apply-filters-btn"
+                                    class="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors font-medium shadow-md shadow-indigo-200">Filtrar</button>
+                                <button id="ga-clear-filters-btn"
+                                    class="flex-1 px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg transition-colors font-medium">Limpiar</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center">
+                            <label for="ga-group-by" class="text-sm font-medium text-gray-600 mr-3">Agrupar por:</label>
+                            <select id="ga-group-by" class="serious-input px-3 py-1.5 rounded-lg text-sm">
+                                <option value="none">Ninguno</option>
+                                <option value="day">Día</option>
+                                <option value="consultant">Consultor</option>
+                            </select>
+                        </div>
+                        <div class="text-right serious-card px-4 py-2 bg-white">
+                            <span class="text-sm font-medium text-gray-600 mr-2">Total de Horas:</span>
+                            <span id="ga-total-hours" class="text-lg font-bold text-gray-900">0.00</span>
+                        </div>
+                    </div>
+
+                    <div id="ga-report-container" class="serious-card overflow-hidden">
+                        <table class="min-w-full serious-table">
+                            <thead>
+                                <tr>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Fecha
+                                    </th>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Consultor
+                                    </th>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Cliente
+                                    </th>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Ticket
+                                    </th>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Proyecto
+                                    </th>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider">Adicional
+                                    </th>
+                                    <th scope="col"
+                                        class="px-6 py-3 text-right text-xs font-bold uppercase tracking-wider">Horas
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody id="ga-report-table-body">
+                            </tbody>
+                        </table>
+                        <div id="ga-report-placeholder" class="text-center py-12 text-gray-400">
+                            Use los filtros para generar el reporte.
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        const token = '{{ access_token | safe }}';
+        const api_base_url = '{{ api_base_url | safe }}';
+
+        // Sidebar Footer Animation (Keep intact)
+        document.addEventListener('DOMContentLoaded', function () {
+            const footerContent = document.getElementById('sidebar-footer-content');
+            if (!footerContent) return;
+
+            const items = [
+                '<span class="text-lg font-bold text-gray-400 tracking-wider">Flowdesk</span>',
+                '<img src="{{ url_for("static", filename="img/innova_logo.png") }}" alt="Innova" class="h-8 object-contain opacity-60">',
+                '<img src="{{ url_for("static", filename="img/sap_logo.png") }}" alt="SAP" class="h-8 object-contain opacity-60">',
+                '<img src="{{ url_for("static", filename="img/odoo_logo.png") }}" alt="Odoo" class="h-8 object-contain opacity-60">',
+                '<img src="{{ url_for("static", filename="img/hexagon_logo.png") }}" alt="Hexagon" class="h-8 object-contain opacity-60">'
+            ];
+
+            let currentIndex = 0;
+            setInterval(() => {
+                footerContent.style.opacity = '0';
+                setTimeout(() => {
+                    currentIndex = (currentIndex + 1) % items.length;
+                    footerContent.innerHTML = items[currentIndex];
+                    footerContent.style.opacity = '1';
+                }, 500);
+            }, 3000);
+        });
+
+        // --- Tabs Logic ---
+        const tabs = ['activities', 'support-hours', 'additional-hours', 'global-activities'];
+
+        function switchTab(tabId) {
+            tabs.forEach(t => {
+                document.getElementById(`content-${t}`).classList.add('hidden');
+                const tabBtn = document.getElementById(`tab-${t}`);
+                if (tabBtn) {
+                    tabBtn.classList.remove('active');
+                }
+            });
+
+            document.getElementById(`content-${tabId}`).classList.remove('hidden');
+            const activeTab = document.getElementById(`tab-${tabId}`);
+            if (activeTab) {
+                activeTab.classList.add('active');
+            }
+
+            if (tabId === 'activities') loadActivitiesByUser();
+            if (tabId === 'support-hours') loadClients('client-select');
+            if (tabId === 'additional-hours') loadClients('client-select-additional');
+            if (tabId === 'global-activities') {
+                // Asegura que los clientes y usuarios estén cargados antes de renderizar filtros
+                populateGlobalActivityFilters();
+            }
+        }
+
+        tabs.forEach(t => {
+            const btn = document.getElementById(`tab-${t}`);
+            if (btn) btn.addEventListener('click', () => switchTab(t));
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            switchTab('activities');
+        });
+
+        // --- Shared: Load Clients ---
+        async function loadClients(selectId) {
+            const select = document.getElementById(selectId);
+            if (!select || select.options.length > 1) return;
+
+            try {
+                const response = await fetch(`${api_base_url}/api/clientes/`, { headers: { 'Authorization': `Bearer ${token}` } });
+                if (!response.ok) throw new Error('Failed to fetch clients');
+                const clients = await response.json();
+
+                clients.forEach(client => {
+                    const option = document.createElement('option');
+                    option.value = client.id;
+                    option.textContent = client.razon_social || client.nombre;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading clients:', error);
+                showToast('Error al cargar clientes.', 'error');
+            }
+        }
+
+        // --- Report 1: Activities by User ---
+        let activitiesChart = null;
+
+        async function loadActivitiesByUser() {
+            try {
+                const response = await fetch(`${api_base_url}/api/reports/activities_by_user`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!response.ok) throw new Error('Failed to fetch activities data');
+                const data = await response.json();
+
+                renderActivitiesChart(data);
+            } catch (error) {
+                console.error('Error loading activities by user:', error);
+                showToast('Error al cargar reporte de actividades.', 'error');
+            }
+        }
+
+        function renderActivitiesChart(data) {
+            const ctx = document.getElementById('activities-by-user-chart').getContext('2d');
+
+            if (activitiesChart) {
+                activitiesChart.destroy();
+            }
+
+            const labels = data.map(item => item.user);
+            const counts = data.map(item => item.ticket_count);
+            const colors = [
+                'rgba(79, 70, 229, 0.8)',   // Indigo-600
+                'rgba(245, 158, 11, 0.8)',  // Amber-500
+                'rgba(239, 68, 68, 0.8)',   // Red-500
+                'rgba(16, 185, 129, 0.8)',  // Emerald-500
+                'rgba(139, 92, 246, 0.8)',  // Violet-500
+                'rgba(236, 72, 153, 0.8)'   // Pink-500
+            ];
+
+            activitiesChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Tickets',
+                        data: counts,
+                        backgroundColor: colors,
+                        borderColor: '#ffffff', // Borde blanco para separar en modo claro
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            titleColor: '#111827',
+                            bodyColor: '#111827',
+                            backgroundColor: '#ffffff',
+                            borderColor: '#e5e7eb',
+                            borderWidth: 1
+                        }
+                    }
+                }
+            });
+
+            // Custom Legend
+            const legendContainer = document.getElementById('chart-legend');
+            legendContainer.innerHTML = '';
+            data.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'flex items-center text-sm';
+                div.innerHTML = `
+                    <span class="w-3 h-3 rounded-full mr-2" style="background-color: ${colors[index % colors.length]}"></span>
+                    <span class="font-medium mr-2 text-gray-700">${item.user}:</span>
+                    <span class="font-bold text-gray-900">${item.ticket_count}</span>
+                `;
+                legendContainer.appendChild(div);
+            });
+        }
+
+        // --- Report 2: Support Hours Logic ---
+        const clientSelect = document.getElementById('client-select');
+        if (clientSelect) {
+            clientSelect.addEventListener('change', async function () {
+                const clientId = this.value;
+                if (!clientId) {
+                    document.getElementById('client-stats').classList.add('hidden');
+                    document.getElementById('client-stats-placeholder').classList.remove('hidden');
+                    document.getElementById('support-hours-details-container').classList.add('hidden');
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`${api_base_url}/api/reports/support_hours/${clientId}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (!response.ok) throw new Error('Failed to fetch support hours');
+                    const data = await response.json();
+
+                    let consumedHoursSupport = 0;
+                    const supportActivities = [];
+
+                    // CORRECCIÓN PRINCIPAL: Filtrar actividades y recalcular horas consumidas SOLO para soporte
+                    if (data.activities && data.activities.length > 0) {
+                        data.activities.forEach(item => {
+                            // Si NO es una actividad adicional, se cuenta y se incluye en la tabla de soporte.
+                            if (!item.is_additional) {
+                                consumedHoursSupport += item.duration_hours;
+                                supportActivities.push(item);
+                            }
+                        });
+                    }
+
+                    const balance = data.contracted_hours - consumedHoursSupport;
+
+                    // Update Stats
+                    document.getElementById('stat-contracted').textContent = data.contracted_hours.toFixed(2);
+                    document.getElementById('stat-consumed').textContent = consumedHoursSupport.toFixed(2); // Usar el valor filtrado
+                    document.getElementById('stat-balance').textContent = balance.toFixed(2);
+
+                    const balanceCard = document.getElementById('balance-card');
+                    const balanceHeader = balanceCard.querySelector('h3');
+
+                    balanceCard.classList.remove('border-green-500', 'border-red-500');
+                    if (balance < 0) {
+                        balanceCard.classList.add('border-red-500');
+                        balanceHeader.classList.remove('text-green-600');
+                        balanceHeader.classList.add('text-red-600');
+                    } else {
+                        balanceCard.classList.add('border-green-500');
+                        balanceHeader.classList.remove('text-red-600');
+                        balanceHeader.classList.add('text-green-600');
+                    }
+
+                    document.getElementById('client-stats').classList.remove('hidden');
+                    document.getElementById('client-stats-placeholder').classList.add('hidden');
+
+                    // Update Table: Mostrar solo actividades de soporte
+                    const tbody = document.getElementById('support-hours-table-body');
+                    tbody.innerHTML = '';
+
+                    if (supportActivities.length > 0) {
+                        supportActivities.forEach(item => {
+                            const tr = document.createElement('tr');
+                            tr.innerHTML = `
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${item.user || 'N/A'}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${item.proyecto_nombre || 'N/A'}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-right font-mono">${item.duration_hours.toFixed(2)}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <a href="/actividad?id=${item.id}" target="_blank" class="text-indigo-600 hover:text-indigo-900 transition-colors">Ver</a>
+                                </td>
+                            `;
+                            tbody.appendChild(tr);
+                        });
+                        document.getElementById('support-hours-details-container').classList.remove('hidden');
+                        document.getElementById('support-hours-details-placeholder').classList.add('hidden');
+                        document.querySelector('#support-hours-details-container table').classList.remove('hidden');
+                    } else {
+                        document.getElementById('support-hours-details-container').classList.remove('hidden');
+                        document.getElementById('support-hours-details-placeholder').classList.remove('hidden');
+                        document.querySelector('#support-hours-details-container table').classList.add('hidden');
+                    }
+
+                } catch (error) {
+                    console.error('Error loading support hours:', error);
+                    showToast('Error al cargar horas de soporte.', 'error');
+                }
+            });
+        }
+
+        // --- Report 3: Additional Hours Logic ---
+        const clientSelectAdditional = document.getElementById('client-select-additional');
+        if (clientSelectAdditional) {
+            clientSelectAdditional.addEventListener('change', async function () {
+                const clientId = this.value;
+                if (!clientId) {
+                    document.getElementById('additional-hours-stats').classList.add('hidden');
+                    document.getElementById('additional-hours-placeholder').classList.remove('hidden');
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`${api_base_url}/api/reports/additional-hours/${clientId}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (!response.ok) throw new Error('Failed to fetch additional hours');
+                    const data = await response.json();
+
+                    document.getElementById('ah-total-approved').textContent = data.summary.total_approved.toFixed(2);
+                    document.getElementById('ah-total-consumed').textContent = data.summary.total_consumed.toFixed(2);
+                    document.getElementById('ah-total-balance').textContent = data.summary.total_balance.toFixed(2);
+
+                    const balanceCard = document.getElementById('ah-balance-card');
+                    const balanceHeader = balanceCard.querySelector('h3');
+
+                    balanceCard.classList.remove('border-green-500', 'border-red-500');
+                    if (data.summary.total_balance < 0) {
+                        balanceCard.classList.add('border-red-500');
+                        balanceHeader.classList.remove('text-green-600');
+                        balanceHeader.classList.add('text-red-600');
+                    } else {
+                        balanceCard.classList.add('border-green-500');
+                        balanceHeader.classList.remove('text-red-600');
+                        balanceHeader.classList.add('text-green-600');
+                    }
+
+                    const tbody = document.getElementById('additional-hours-table-body');
+                    tbody.innerHTML = '';
+                    data.details.forEach(row => {
+                        const tr = document.createElement('tr');
+
+                        let statusClasses = 'bg-gray-100 text-gray-800';
+                        if (row.status === 'APROBADO') {
+                            statusClasses = 'bg-green-100 text-green-800';
+                        } else if (row.status === 'PENDIENTE') {
+                            statusClasses = 'bg-yellow-100 text-yellow-800';
+                        } else if (row.status === 'RECHAZADO') {
+                            statusClasses = 'bg-red-100 text-red-800';
+                        }
+
+                        tr.innerHTML = `
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-indigo-600 hover:text-indigo-900">
+                                <a href="/actividad?id=${row.ticket_id}" target="_blank">#${row.ticket_id}</a>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${row.ticket_title || 'Sin Título'}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClasses}">
+                                    ${row.status}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-right font-mono">${row.approved_hours.toFixed(2)}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-right font-mono">${row.consumed_hours.toFixed(2)}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-bold font-mono ${row.balance < 0 ? 'text-red-600' : 'text-green-600'}">
+                                ${row.balance.toFixed(2)}
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+
+                    document.getElementById('additional-hours-stats').classList.remove('hidden');
+                    document.getElementById('additional-hours-placeholder').classList.add('hidden');
+
+                } catch (error) {
+                    console.error('Error loading additional hours:', error);
+                    showToast('Error al cargar reporte de horas adicionales.', 'error');
+                }
+            });
+        }
+
+        // --- Report 4: Global Activities Report ---
+        let rawGlobalActivityData = [];
+
+        async function populateGlobalActivityFilters() {
+            const clientSelect = document.getElementById('ga-client-select');
+            const userSelect = document.getElementById('ga-user-select');
+
+            // 1. Cargar Clientes (si es necesario)
+            if (clientSelect.options.length === 1) {
+                await loadClients('ga-client-select');
+            }
+
+            // 2. Cargar Usuarios (si es necesario)
+            if (userSelect.options.length === 1) {
+                try {
+                    const response = await fetch(`${api_base_url}/api/department_managers/eligible_users/`, { headers: { 'Authorization': `Bearer ${token}` } });
+                    if (!response.ok) throw new Error('Failed to fetch eligible users.');
+                    const users = await response.json();
+
+                    userSelect.innerHTML = '<option value="">Todos</option>'; // Resetear antes de llenar
+                    users.forEach(user => {
+                        const option = document.createElement('option');
+                        option.value = user.user;
+                        option.textContent = user.user;
+                        userSelect.appendChild(option);
+                    });
+                } catch (error) {
+                    console.error('Error populating user filter:', error);
+                    showToast('Error al cargar lista de consultores.', 'error');
+                }
+            }
+        }
+
+        async function fetchGlobalActivities() {
+            const placeholder = document.getElementById('ga-report-placeholder');
+            const tableBody = document.getElementById('ga-report-table-body');
+            const totalHoursEl = document.getElementById('ga-total-hours');
+
+            placeholder.textContent = 'Cargando...';
+            placeholder.style.display = 'block';
+            tableBody.innerHTML = '';
+            totalHoursEl.textContent = '0.00';
+
+            const startDate = document.getElementById('ga-start-date').value;
+            const endDate = document.getElementById('ga-end-date').value;
+
+            // Validación de Fechas
+            if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+                showToast('La fecha "Desde" no puede ser posterior a la fecha "Hasta".', 'warning');
+                placeholder.textContent = 'Use los filtros para generar el reporte.';
+                return;
+            }
+
+
+            const params = new URLSearchParams();
+            const clientId = document.getElementById('ga-client-select').value;
+            const userId = document.getElementById('ga-user-select').value;
+            const ticketId = document.getElementById('ga-ticket-id').value;
+            const isAdditional = document.getElementById('ga-is-additional').value;
+
+            if (startDate) params.append('start_date', startDate);
+            if (endDate) params.append('end_date', endDate);
+            if (clientId) params.append('client_id', clientId);
+            if (userId) params.append('user_id', userId);
+            if (ticketId) params.append('ticket_id', ticketId);
+            if (isAdditional !== '') params.append('is_additional', isAdditional);
+
+            try {
+                const response = await fetch(`${api_base_url}/api/reports/global_activities?${params.toString()}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!response.ok) throw new Error('Failed to fetch global activities report.');
+
+                rawGlobalActivityData = await response.json();
+
+                if (rawGlobalActivityData.length === 0) {
+                    placeholder.textContent = 'No se encontraron actividades con los filtros seleccionados.';
+                } else {
+                    placeholder.style.display = 'none';
+                }
+
+                renderGlobalActivities();
+
+            } catch (error) {
+                console.error('Error fetching global activities report:', error);
+                showToast('Error al cargar el reporte de actividades.', 'error');
+                placeholder.textContent = 'Ocurrió un error al cargar el reporte.';
+            }
+        }
+
+        function renderGlobalActivities() {
+            const tableBody = document.getElementById('ga-report-table-body');
+            const totalHoursEl = document.getElementById('ga-total-hours');
+            const groupBy = document.getElementById('ga-group-by').value;
+
+            tableBody.innerHTML = '';
+            let totalHours = 0;
+
+            if (rawGlobalActivityData.length === 0) {
+                document.getElementById('ga-report-placeholder').style.display = 'block';
+                return;
+            } else {
+                document.getElementById('ga-report-placeholder').style.display = 'none';
+            }
+
+
+            if (groupBy === 'none') {
+                rawGlobalActivityData.forEach(activity => {
+                    const row = createActivityRow(activity);
+                    tableBody.appendChild(row);
+                    totalHours += activity.duration_hours;
+                });
+            } else {
+                const groupedData = groupData(rawGlobalActivityData, groupBy);
+                for (const group in groupedData) {
+                    const groupHeaderRow = document.createElement('tr');
+                    // Usamos estilos de tabla para un tema claro consistente
+                    groupHeaderRow.className = 'bg-gray-100 border-t border-b border-gray-200';
+                    groupHeaderRow.innerHTML = `<td colspan="7" class="px-6 py-2 text-sm font-bold text-gray-700">${group} (Total Horas: ${groupedData[group].total.toFixed(2)})</td>`;
+                    tableBody.appendChild(groupHeaderRow);
+
+                    groupedData[group].items.forEach(activity => {
+                        const row = createActivityRow(activity);
+                        tableBody.appendChild(row);
+                    });
+                    totalHours += groupedData[group].total;
+                }
+            }
+
+            totalHoursEl.textContent = totalHours.toFixed(2);
+        }
+
+        function createActivityRow(activity) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${new Date(activity.activity_date).toLocaleDateString()}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${activity.consultant || 'N/A'}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${activity.client_name || 'N/A'}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-indigo-600 hover:text-indigo-900">
+                    <a href="/actividad?id=${activity.ticket_id}" target="_blank">#${activity.ticket_id || 'N/A'}</a>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${activity.project_name || 'N/A'}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${activity.is_additional ? '<span class="text-yellow-600 font-bold">Sí</span>' : 'No'}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 text-right font-mono">${activity.duration_hours.toFixed(2)}</td>
+            `;
+            return row;
+        }
+
+        function groupData(data, key) {
+            const groups = {};
+            data.forEach(item => {
+                let groupValue = '';
+                if (key === 'day') {
+                    // Formatea la fecha para agrupar por día
+                    groupValue = new Date(item.activity_date).toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                } else if (key === 'consultant') {
+                    groupValue = item.consultant || 'Sin Asignar';
+                }
+
+                if (!groups[groupValue]) {
+                    groups[groupValue] = { items: [], total: 0 };
+                }
+                groups[groupValue].items.push(item);
+                groups[groupValue].total += item.duration_hours;
+            });
+            return groups;
+        }
+
+        // --- Event Listeners ---
+        const applyFiltersBtn = document.getElementById('ga-apply-filters-btn');
+        if (applyFiltersBtn) applyFiltersBtn.addEventListener('click', fetchGlobalActivities);
+
+        const clearFiltersBtn = document.getElementById('ga-clear-filters-btn');
+        if (clearFiltersBtn) {
+            clearFiltersBtn.addEventListener('click', () => {
+                document.getElementById('ga-start-date').value = '';
+                document.getElementById('ga-end-date').value = '';
+                document.getElementById('ga-client-select').value = '';
+                document.getElementById('ga-user-select').value = '';
+                document.getElementById('ga-ticket-id').value = '';
+                document.getElementById('ga-is-additional').value = '';
+                rawGlobalActivityData = [];
+                renderGlobalActivities();
+            });
+        }
+
+        const groupBySelect = document.getElementById('ga-group-by');
+        if (groupBySelect) groupBySelect.addEventListener('change', renderGlobalActivities);
+    </script>
+</body>
+
+</html>

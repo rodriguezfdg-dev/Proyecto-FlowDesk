@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Clientes (Empresas) - Flowdesk</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/toast.css') }}">
+    <script src="{{ url_for('static', filename='js/toast.js') }}"></script>
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradient {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        /* Glassmorphism */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+
+        .glass-sidebar {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            transition: all 0.3s ease;
+        }
+
+        .glass-card:hover {
+            background: rgba(255, 255, 255, 0.9);
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Form Elements */
+        .form-input {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus {
+            background: white;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+        }
+
+        /* Animations */
+        .fade-in-up {
+            animation: fadeInUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .delay-100 {
+            animation-delay: 0.1s;
+        }
+
+        .delay-200 {
+            animation-delay: 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            color: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4);
+            transform: translateY(-2px);
+        }
+
+        /* Modal */
+        .modal {
+            transition: opacity 0.2s ease-in-out;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .modal.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            transform: scale(0.95);
+            transition: transform 0.2s;
+        }
+
+        .modal.active .modal-content {
+            transform: scale(1);
+        }
+    </style>
+</head>
+
+<body class="text-gray-800">
+    <div id="toast-container"></div>
+
+    <div id="app" class="flex h-screen overflow-hidden">
+        <!-- Sidebar (Glass) -->
+        <aside id="sidebar"
+            class="glass-sidebar w-64 flex-shrink-0 flex flex-col transition-all duration-300 z-20 shadow-2xl">
+            <div class="h-20 flex items-center px-8 border-b border-white/10">
+                <div class="text-3xl font-bold text-white tracking-tight">
+                    Flow<span class="text-indigo-200">desk</span>
+                </div>
+            </div>
+
+            <nav class="flex-1 overflow-y-auto py-6 px-4 space-y-2">
+                <a href="{{ url_for('desk') }}"
+                    class="flex items-center px-4 py-3 rounded-xl text-white/80 hover:bg-white/10 hover:text-white transition-all group">
+                    <i class="fas fa-columns w-6 text-center group-hover:scale-110 transition-transform"></i>
+                    <span class="ml-3 font-medium">Tickets</span>
+                </a>
+                <a href="{{ url_for('mis_actividades') }}"
+                    class="flex items-center px-4 py-3 rounded-xl text-white/80 hover:bg-white/10 hover:text-white transition-all group">
+                    <i class="fas fa-tasks w-6 text-center group-hover:scale-110 transition-transform"></i>
+                    <span class="ml-3 font-medium">Mis Actividades</span>
+                </a>
+                <a href="{{ url_for('clientes_new') }}"
+                    class="flex items-center px-4 py-3 rounded-xl text-white/80 hover:bg-white/10 hover:text-white transition-all group">
+                    <i class="fas fa-users w-6 text-center group-hover:scale-110 transition-transform"></i>
+                    <span class="ml-3 font-medium">Usuarios</span>
+                </a>
+                <a href="{{ url_for('empresas') }}"
+                    class="flex items-center px-4 py-3 rounded-xl bg-white/20 text-white shadow-lg border border-white/10">
+                    <i class="fas fa-building w-6 text-center"></i>
+                    <span class="ml-3 font-bold">Clientes</span>
+                </a>
+                <a href="{{ url_for('actividad') }}"
+                    class="flex items-center px-4 py-3 rounded-xl text-white/80 hover:bg-white/10 hover:text-white transition-all group">
+                    <i class="fas fa-plus-circle w-6 text-center group-hover:scale-110 transition-transform"></i>
+                    <span class="ml-3 font-medium">Crear Ticket</span>
+                </a>
+                <a href="{{ url_for('reports') }}"
+                    class="flex items-center px-4 py-3 rounded-xl text-white/80 hover:bg-white/10 hover:text-white transition-all group">
+                    <i class="fas fa-chart-line w-6 text-center group-hover:scale-110 transition-transform"></i>
+                    <span class="ml-3 font-medium">Reportes</span>
+                </a>
+                <a href="{{ url_for('settings') }}"
+                    class="flex items-center px-4 py-3 rounded-xl text-white/80 hover:bg-white/10 hover:text-white transition-all group">
+                    <i class="fas fa-cog w-6 text-center group-hover:scale-110 transition-transform"></i>
+                    <span class="ml-3 font-medium">Ajustes</span>
+                </a>
+            </nav>
+
+            <!-- Footer -->
+            <div class="p-6 border-t border-white/10 bg-black/10">
+                <div id="sidebar-footer-content"
+                    class="h-10 flex items-center justify-center transition-opacity duration-500">
+                    <span class="text-lg font-bold text-white/60 tracking-wider">Flowdesk</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto p-4 md:p-8 relative z-10">
+            <!-- Header -->
+            <header class="flex flex-col md:flex-row justify-between items-center mb-8 fade-in-up gap-4">
+                <div>
+                    <h1 class="text-3xl font-bold text-white drop-shadow-md">Gestión de Clientes</h1>
+                    <p class="text-white/80 mt-1 font-medium">Administra las empresas y sus bolsas de horas</p>
+                </div>
+
+                <div class="flex items-center gap-4 w-full md:w-auto">
+                    <div class="relative w-full md:w-64">
+                        <input type="text" id="searchInput" placeholder="Buscar cliente..."
+                            class="form-input block w-full pl-10 pr-4 py-2.5 rounded-xl text-sm focus:outline-none">
+                        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                    </div>
+
+                    <a href="{{ url_for('logout') }}"
+                        class="flex items-center space-x-2 px-4 py-2.5 bg-white/90 hover:bg-white text-indigo-600 rounded-xl shadow-lg hover:shadow-xl transition-all font-bold">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Salir</span>
+                    </a>
+                </div>
+            </header>
+
+            <!-- Gallery Grid -->
+            <div id="clientes-gallery"
+                class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 fade-in-up delay-100">
+                <div id="loading-placeholder"
+                    class="col-span-full flex flex-col items-center justify-center py-20 text-gray-400">
+                    <i class="fas fa-circle-notch fa-spin fa-3x mb-4 text-white/60"></i>
+                    <p class="font-medium text-white/80">Cargando clientes...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modules Modal -->
+    <div id="modules-modal"
+        class="modal fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        <div
+            class="modal-content bg-white w-full max-w-2xl rounded-xl shadow-2xl p-6 relative max-h-[90vh] overflow-y-auto">
+            <button onclick="closeModulesModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times"></i>
+            </button>
+
+            <h2 class="text-xl font-bold text-gray-800 mb-1">Gestionar Módulos</h2>
+            <p class="text-sm text-gray-500 mb-6" id="modules-modal-subtitle">Cliente: ...</p>
+
+            <!-- Add Module Form -->
+            <form id="add-module-form" class="bg-gray-50 p-4 rounded-lg mb-6 border border-gray-200">
+                <h3 class="text-sm font-bold text-gray-700 mb-3 uppercase tracking-wide">Añadir Nuevo Módulo</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Nombre Módulo</label>
+                        <input type="text" name="Name" required placeholder="Ej. Soporte Trello"
+                            class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">ID Trello</label>
+                        <input type="text" name="ID" required placeholder="Board ID"
+                            class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Departamento</label>
+                        <select name="Department" id="department-select" required
+                            class="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                            <option value="">Seleccionar...</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mt-4 text-right">
+                    <button type="submit" class="btn-primary px-4 py-2 rounded-lg text-sm font-medium shadow-sm">
+                        <i class="fas fa-plus mr-1"></i> Añadir
+                    </button>
+                </div>
+            </form>
+
+            <!-- Modules List -->
+            <div>
+                <h3 class="text-sm font-bold text-gray-700 mb-3 uppercase tracking-wide">Módulos Activos</h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th
+                                    class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Nombre</th>
+                                <th
+                                    class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    ID Trello</th>
+                                <th
+                                    class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Departamento</th>
+                                <th
+                                    class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modules-table-body" class="bg-white divide-y divide-gray-200">
+                            <!-- Rows injected here -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="no-modules-msg" class="hidden text-center py-8 text-gray-400 text-sm italic">
+                    No hay módulos configurados para este cliente.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const token = '{{ access_token | safe }}';
+        const api_base_url = '{{ api_base_url | safe }}';
+        let currentClienteCode = null;
+        let availableDepartments = [];
+
+        // Sidebar Footer Animation
+        document.addEventListener('DOMContentLoaded', function () {
+            const footerContent = document.getElementById('sidebar-footer-content');
+            if (!footerContent) return;
+
+            const items = [
+                '<span class="text-lg font-bold text-white/60 tracking-wider">Flowdesk</span>',
+                '<img src="{{ url_for("static", filename="img/innova_logo.png") }}" alt="Innova" class="h-8 object-contain opacity-60">',
+                '<img src="{{ url_for("static", filename="img/sap_logo.png") }}" alt="SAP" class="h-8 object-contain opacity-60">',
+                '<img src="{{ url_for("static", filename="img/odoo_logo.png") }}" alt="Odoo" class="h-8 object-contain opacity-60">',
+                '<img src="{{ url_for("static", filename="img/hexagon_logo.png") }}" alt="Hexagon" class="h-8 object-contain opacity-60">'
+            ];
+
+            let currentIndex = 0;
+            setInterval(() => {
+                footerContent.style.opacity = '0';
+                setTimeout(() => {
+                    currentIndex = (currentIndex + 1) % items.length;
+                    footerContent.innerHTML = items[currentIndex];
+                    footerContent.style.opacity = '1';
+                }, 500);
+            }, 3000);
+        });
+
+        // --- Module Management Logic ---
+
+        async function openModulesModal(clienteCode, clienteName) {
+            currentClienteCode = clienteCode;
+            document.getElementById('modules-modal-subtitle').textContent = `Cliente: ${clienteName}`;
+            document.getElementById('modules-modal').classList.add('active');
+
+            // Populate Departments if empty
+            if (availableDepartments.length === 0) {
+                await fetchDepartments();
+            }
+            populateDepartmentSelect();
+
+            // Fetch Modules
+            fetchModules(clienteCode);
+        }
+
+        function closeModulesModal() {
+            document.getElementById('modules-modal').classList.remove('active');
+            document.getElementById('add-module-form').reset();
+            currentClienteCode = null;
+        }
+
+        async function fetchDepartments() {
+            try {
+                const response = await fetch(`${api_base_url}/api/department_managers/`, { headers: { 'Authorization': `Bearer ${token}` } });
+                if (response.ok) {
+                    const data = await response.json();
+                    // Extract unique department names from managers
+                    const managers = data.rows || [];
+                    const depts = new Set(managers.map(m => m.department));
+                    availableDepartments = Array.from(depts);
+                }
+            } catch (error) { console.error('Error fetching departments:', error); }
+        }
+
+        function populateDepartmentSelect() {
+            const select = document.getElementById('department-select');
+            select.innerHTML = '<option value="">Seleccionar...</option>';
+            availableDepartments.forEach(dept => {
+                const option = document.createElement('option');
+                option.value = dept;
+                option.textContent = dept;
+                select.appendChild(option);
+            });
+        }
+
+        async function fetchModules(clienteCode) {
+            const tbody = document.getElementById('modules-table-body');
+            const noMsg = document.getElementById('no-modules-msg');
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4"><i class="fas fa-spinner fa-spin"></i> Cargando...</td></tr>';
+            noMsg.classList.add('hidden');
+
+            try {
+                const response = await fetch(`${api_base_url}/api/boards/?customer_code=${clienteCode}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Failed to load modules');
+
+                const modules = await response.json();
+                tbody.innerHTML = '';
+
+                if (modules.length === 0) {
+                    noMsg.classList.remove('hidden');
+                } else {
+                    modules.forEach(mod => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">${mod.Name}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500 font-mono">${mod.ID}</td>
+                            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500"><span class="bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full text-xs font-bold">${mod.Department || '-'}</span></td>
+                            <td class="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+                                <button onclick="deleteModule(${mod.internalId})" class="text-red-600 hover:text-red-900 transition-colors" title="Eliminar">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            } catch (error) {
+                console.error(error);
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-red-500">Error al cargar módulos.</td></tr>';
+            }
+        }
+
+        document.getElementById('add-module-form').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            if (!currentClienteCode) return;
+
+            const formData = new FormData(this);
+            const data = {
+                Name: formData.get('Name'),
+                ID: formData.get('ID'),
+                Department: formData.get('Department'),
+                Customer: currentClienteCode
+            };
+
+            const btn = this.querySelector('button[type="submit"]');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+            try {
+                const response = await fetch(`${api_base_url}/api/boards/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify(data)
+                });
+
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.detail || 'Error al crear módulo');
+                }
+
+                showToast('Módulo añadido correctamente', 'success');
+                this.reset();
+                fetchModules(currentClienteCode);
+            } catch (error) {
+                showToast(error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        });
+
+        async function deleteModule(id) {
+            if (!confirm('¿Estás seguro de eliminar este módulo?')) return;
+
+            try {
+                const response = await fetch(`${api_base_url}/api/boards/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Error al eliminar');
+
+                showToast('Módulo eliminado', 'success');
+                fetchModules(currentClienteCode);
+            } catch (error) {
+                showToast(error.message, 'error');
+            }
+        }
+
+
+        // --- Existing Client Management Logic ---
+        function toggleEncargados(clienteId) {
+            const container = document.getElementById(`encargados-container-${clienteId}`);
+            const saveButton = document.getElementById(`save-encargados-button-${clienteId}`);
+            if (container && saveButton) {
+                container.classList.toggle('hidden');
+                saveButton.classList.toggle('hidden');
+            }
+        }
+
+        async function updateSupportHours(clienteId) {
+            const input = document.getElementById(`hours-input-${clienteId}`);
+            const button = input.nextElementSibling;
+            const originalText = button.innerHTML;
+            const newHours = parseFloat(input.value);
+
+            if (isNaN(newHours) || newHours < 0) {
+                showToast('Por favor, introduce un número válido de horas.', 'warning');
+                return;
+            }
+
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+            try {
+                const response = await fetch(`${api_base_url}/api/clientes/${clienteId}/support-hours`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ support_hours: newHours })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || "Error al actualizar las horas.");
+                }
+                const updatedClient = await response.json();
+
+                const hoursTotalElem = document.querySelector(`[data-cliente-id="${clienteId}"] .hours-total`);
+                const progressBar = document.querySelector(`[data-cliente-id="${clienteId}"] .progress-bar`);
+                hoursTotalElem.textContent = updatedClient.support_hours.toFixed(1);
+                const percentage = updatedClient.support_hours > 0 ? (updatedClient.support_hours_consumed / updatedClient.support_hours) * 100 : 0;
+                progressBar.style.width = `${Math.min(percentage, 100)}%`;
+
+                showToast('Horas actualizadas correctamente', 'success');
+            } catch (error) {
+                showToast(`Error: ${error.message}`, 'error');
+            } finally {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        }
+
+        async function updateEncargados(clienteId) {
+            const container = document.getElementById(`encargados-container-${clienteId}`);
+            const hiddenInput = document.getElementById(`encargados-hidden-input-${clienteId}`);
+            const button = document.querySelector(`button[onclick="updateEncargados(${clienteId})"]`);
+            const originalText = button.innerHTML;
+
+            const checked = Array.from(container.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+            hiddenInput.value = checked.join(',');
+
+            button.disabled = true;
+            button.innerHTML = 'Guardando...';
+
+            try {
+                const response = await fetch(`${api_base_url}/api/clientes/${clienteId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ encargados: hiddenInput.value })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || "Error al guardar los encargados.");
+                }
+                showToast('Encargados actualizados correctamente', 'success');
+                toggleEncargados(clienteId);
+            } catch (error) {
+                showToast(`Error: ${error.message}`, 'error');
+            } finally {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        }
+
+        function populateCheckboxes(containerId, eligibleUsers, assignedEncargadosStr) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            container.innerHTML = '';
+
+            const assigned = assignedEncargadosStr ? assignedEncargadosStr.split(',').map(s => s.trim()) : [];
+
+            eligibleUsers.forEach(user => {
+                const isChecked = assigned.includes(user.user);
+                const checkboxDiv = document.createElement('div');
+                checkboxDiv.className = 'flex items-center p-1 hover:bg-gray-50 rounded';
+                checkboxDiv.innerHTML = `
+                        <input id="user-${user.id}-${containerId}" type="checkbox" value="${user.user}" ${isChecked ? 'checked' : ''} class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded cursor-pointer">
+                        <label for="user-${user.id}-${containerId}" class="ml-2 block text-sm text-gray-700 cursor-pointer flex-1">${user.user}</label>
+                    `;
+                container.appendChild(checkboxDiv);
+            });
+        }
+
+        function renderClientes(clientes, eligibleUsers) {
+            const gallery = document.getElementById('clientes-gallery');
+            gallery.innerHTML = '';
+            if (!clientes || clientes.length === 0) {
+                gallery.innerHTML = '<div class="col-span-full text-center py-10 bg-white/50 rounded-2xl border border-dashed border-gray-300"><p class="text-gray-500">No se encontraron clientes.</p></div>';
+                return;
+            }
+
+            clientes.forEach(cliente => {
+                const percentage = cliente.support_hours > 0 ? (cliente.support_hours_consumed / cliente.support_hours) * 100 : 0;
+                const card = document.createElement('div');
+                card.className = 'glass-card rounded-2xl p-6 flex flex-col relative overflow-hidden group';
+                card.dataset.clienteId = cliente.id;
+                card.dataset.clienteName = `${cliente.nombre || ''} ${cliente.razon_social || ''} ${cliente.ruc || ''}`.toLowerCase();
+
+                card.innerHTML = `
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h3 class="text-lg font-bold text-gray-800 leading-tight">${cliente.nombre || cliente.razon_social}</h3>
+                                <p class="text-xs text-gray-500 mt-1 font-mono bg-gray-100 inline-block px-2 py-0.5 rounded">${cliente.ruc || 'Sin RUC'}</p>
+                            </div>
+                            <div class="h-10 w-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-lg shadow-sm">
+                                ${(cliente.nombre || cliente.razon_social || '?').charAt(0).toUpperCase()}
+                            </div>
+                        </div>
+
+                        <div class="mt-auto space-y-4">
+                            <div>
+                                <div class="flex justify-between text-xs font-medium text-gray-600 mb-1">
+                                    <span>Consumo de Horas</span>
+                                    <span><span class="hours-consumed">${(cliente.support_hours_consumed || 0).toFixed(1)}</span> / <span class="hours-total">${(cliente.support_hours || 0).toFixed(1)}</span> hs</span>
+                                </div>
+                                <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                                    <div class="progress-bar bg-gradient-to-r from-indigo-500 to-purple-500 h-2 rounded-full transition-all duration-500" style="width: ${Math.min(percentage, 100)}%"></div>
+                                </div>
+                            </div>
+
+                            <div class="pt-4 border-t border-gray-100">
+                                <div class="flex justify-between items-center mb-2">
+                                    <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Encargados</label>
+                                    <button onclick="toggleEncargados(${cliente.id})" class="text-indigo-600 hover:text-indigo-800 text-xs font-medium transition-colors">
+                                        Editar <i class="fas fa-pen ml-1"></i>
+                                    </button>
+                                </div>
+                                <div id="encargados-container-${cliente.id}" class="hidden space-y-1 border border-gray-200 rounded-lg p-2 h-32 overflow-y-auto bg-white/80 mb-2 custom-scrollbar">
+                                    <!-- Checkboxes -->
+                                </div>
+                                <input type="hidden" id="encargados-hidden-input-${cliente.id}" value="${cliente.encargados || ''}">
+                                <button id="save-encargados-button-${cliente.id}" onclick="updateEncargados(${cliente.id})" class="hidden w-full py-1.5 bg-gray-800 text-white text-xs font-medium rounded-lg hover:bg-gray-900 transition-colors shadow-sm">Guardar Cambios</button>
+                            </div>
+
+                            <div class="pt-2">
+                                <label class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 block">Asignar Horas</label>
+                                <div class="flex shadow-sm rounded-lg">
+                                    <input type="number" step="0.5" id="hours-input-${cliente.id}" value="${(cliente.support_hours || 0).toFixed(1)}" class="block w-full px-3 py-1.5 bg-white border border-gray-200 rounded-l-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+                                    <button onclick="updateSupportHours(${cliente.id})" class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-l-0 border-gray-200 rounded-r-lg text-sm font-medium transition-colors">
+                                        <i class="fas fa-save"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                gallery.appendChild(card);
+                populateCheckboxes(`encargados-container-${cliente.id}`, eligibleUsers, cliente.encargados);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!token || token === 'None' || !token.length) {
+                window.location.href = "{{ url_for('login') }}";
+                return;
+            }
+
+            try {
+                const [usersResponse, clientesResponse] = await Promise.all([
+                    fetch(`${api_base_url}/api/department_managers/eligible_users/`, { headers: { 'Authorization': `Bearer ${token}` } }),
+                    fetch(`${api_base_url}/api/clientes/`, { headers: { 'Authorization': `Bearer ${token}` } })
+                ]);
+
+                let eligibleUsers = [];
+                if (usersResponse.ok) eligibleUsers = await usersResponse.json();
+
+                if (!clientesResponse.ok) throw new Error("Error al cargar los clientes.");
+                const allClientes = await clientesResponse.json();
+
+                document.getElementById('loading-placeholder').remove();
+                renderClientes(allClientes, eligibleUsers);
+
+            } catch (error) {
+                const loadingPlaceholder = document.getElementById('loading-placeholder');
+                if (loadingPlaceholder) {
+                    loadingPlaceholder.innerHTML = `<div class="text-center py-10"><p class="text-red-500 bg-red-50 px-4 py-2 rounded-lg inline-block">Error: ${error.message}</p></div>`;
+                }
+            }
+
+            document.getElementById('searchInput').addEventListener('keyup', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                document.querySelectorAll('#clientes-gallery > [data-cliente-name]').forEach(card => {
+                    card.style.display = card.dataset.clienteName.includes(searchTerm) ? '' : 'none';
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>
+if (loadingPlaceholder) {
+loadingPlaceholder.innerHTML = `<div class="text-center py-10">
+    <p class="text-red-500 bg-red-50 px-4 py-2 rounded-lg inline-block">Error: ${error.message}</p>
+</div>`;
+}
+}
+
+document.getElementById('searchInput').addEventListener('keyup', (e) => {
+const searchTerm = e.target.value.toLowerCase();
+document.querySelectorAll('#clientes-gallery > [data-cliente-name]').forEach(card => {
+card.style.display = card.dataset.clienteName.includes(searchTerm) ? '' : 'none';
+});
+});
+});
+</script>
+</body>
+
+</html>

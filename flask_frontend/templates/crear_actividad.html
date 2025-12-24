@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crear Actividad</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <style>
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .glass-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50">
+
+    <!-- Header Section -->
+    <div class="glass-header text-white pb-24 pt-8 px-4 shadow-lg">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex justify-between items-center mb-6">
+                <div class="flex space-x-3">
+                    <button onclick="window.history.back()"
+                        class="p-2 bg-white/20 hover:bg-white/30 rounded-full backdrop-blur-sm transition duration-200 text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                    </button>
+                    <a href="{{ url_for('desk') }}"
+                        class="p-2 bg-white/20 hover:bg-white/30 rounded-full backdrop-blur-sm transition duration-200 text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                        </svg>
+                    </a>
+                </div>
+                <div class="text-right">
+                    <p class="text-sm opacity-80">Nueva Actividad para Ticket</p>
+                    <h1 class="text-3xl font-bold" id="header-ticket-id">#...</h1>
+                </div>
+            </div>
+            <div class="flex flex-col md:flex-row justify-between items-end">
+                <div>
+                    <h2 id="header-ticket-title" class="text-2xl font-semibold text-white mb-1">Cargando título...</h2>
+                    <p id="header-client-name" class="text-white/80 text-sm">Cliente: ...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Card -->
+    <main class="max-w-7xl mx-auto -mt-16 px-4 fade-in pb-12">
+        <div class="bg-white rounded-xl shadow-xl overflow-hidden p-8">
+            <form id="create-activity-form">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Left Column -->
+                    <div class="space-y-6">
+                        <div>
+                            <label for="titulo" class="block text-sm font-bold text-gray-700 mb-2">Resumen de la
+                                Actividad</label>
+                            <input type="text" id="titulo" name="titulo"
+                                class="block w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                                placeholder="Resumen breve..." required>
+                        </div>
+                        <div>
+                            <label for="descripcion" class="block text-sm font-bold text-gray-700 mb-2">Tareas
+                                Realizadas</label>
+                            <textarea id="descripcion" name="descripcion" rows="8"
+                                class="block w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all resize-none"
+                                placeholder="Detalle de las tareas..." required></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div class="space-y-6">
+                        <!-- Date & Time -->
+                        <div class="bg-gray-50 p-6 rounded-xl border border-gray-100">
+                            <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Horario</h3>
+                            <div class="grid grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label for="start_date" class="block text-xs font-medium text-gray-500 mb-1">Fecha
+                                        Inicio</label>
+                                    <input type="date" id="start_date" name="start_date" required
+                                        class="block w-full px-3 py-2 bg-white border border-gray-200 rounded-md focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                </div>
+                                <div>
+                                    <label for="start_time_only"
+                                        class="block text-xs font-medium text-gray-500 mb-1">Hora
+                                        Inicio</label>
+                                    <input type="text" id="start_time_only" name="start_time_only" required
+                                        class="block w-full px-3 py-2 bg-white border border-gray-200 rounded-md focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label for="end_date" class="block text-xs font-medium text-gray-500 mb-1">Fecha
+                                        Fin</label>
+                                    <input type="date" id="end_date" name="end_date" required
+                                        class="block w-full px-3 py-2 bg-white border border-gray-200 rounded-md focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                </div>
+                                <div>
+                                    <label for="end_time_only" class="block text-xs font-medium text-gray-500 mb-1">Hora
+                                        Fin</label>
+                                    <input type="text" id="end_time_only" name="end_time_only" required
+                                        class="block w-full px-3 py-2 bg-white border border-gray-200 rounded-md focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Classification -->
+                        <div class="bg-gray-50 p-6 rounded-xl border border-gray-100">
+                            <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Clasificación</h3>
+
+                            <div class="mb-4">
+                                <label for="type_user" class="block text-xs font-medium text-gray-500 mb-1">Tipo de
+                                    Tarea</label>
+                                <select id="type_user" name="type_user"
+                                    class="block w-full px-3 py-2 bg-white border border-gray-200 rounded-md focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                    <option value="">Seleccione...</option>
+                                    <option value="Programación">Programación</option>
+                                    <option value="Consultoría">Consultoría</option>
+                                    <option value="Reunión">Reunión</option>
+                                    <option value="Presencial">Presencial</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="activity_subtype"
+                                    class="block text-xs font-medium text-gray-500 mb-1">Subtipo
+                                    de Actividad</label>
+                                <input type="text" id="activity_subtype" name="activity_subtype"
+                                    class="block w-full px-3 py-2 bg-white border border-gray-200 rounded-md focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    placeholder="Ej: Desarrollo, Soporte, etc.">
+                            </div>
+
+                            <div class="space-y-3">
+                                <label class="flex items-center space-x-3 cursor-pointer group">
+                                    <input type="checkbox" id="overtime" name="overtime"
+                                        class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded transition-colors">
+                                    <span
+                                        class="text-sm text-gray-700 group-hover:text-indigo-600 transition-colors">Horas
+                                        a Compensar</span>
+                                </label>
+                                <label class="flex items-center space-x-3 cursor-pointer group">
+                                    <input type="checkbox" id="is_additional_work" name="is_additional_work"
+                                        class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded transition-colors">
+                                    <span class="text-sm text-gray-700 group-hover:text-indigo-600 transition-colors">Es
+                                        Trabajo Adicional (Pendiente de Aprobación)</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Project -->
+                        <div class="bg-gray-50 p-6 rounded-xl border border-gray-100">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider">Proyecto</h3>
+                                <label class="flex items-center space-x-2 text-xs text-gray-500 cursor-pointer">
+                                    <input type="checkbox" id="filter_by_date"
+                                        class="h-3 w-3 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                    <span>Filtrar por fecha</span>
+                                </label>
+                            </div>
+                            <select id="proyecto_id" name="proyecto_id"
+                                class="block w-full px-3 py-2 bg-white border border-gray-200 rounded-md focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                <option value="">Seleccione...</option>
+                                <!-- Options will be loaded dynamically -->
+                            </select>
+                            <p class="mt-3 text-xs text-blue-600 bg-blue-50 p-2 rounded border border-blue-100">
+                                El tiempo consumido se calculará automáticamente y se descontará de la bolsa de horas
+                                del cliente.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hidden fields -->
+                <input type="hidden" id="ticket_id" name="ticket_id">
+                <input type="hidden" id="cliente_id" name="cliente_id">
+
+                <!-- Action Buttons -->
+                <div class="mt-8 pt-6 border-t border-gray-100 flex justify-end space-x-4">
+                    <button type="button" onclick="window.history.back()"
+                        class="px-6 py-2.5 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all shadow-sm">
+                        Cancelar
+                    </button>
+                    <button type="submit"
+                        class="px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all shadow-md transform hover:-translate-y-0.5">
+                        Guardar Actividad
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col space-y-3"></div>
+
+    <script>
+        // Toast Notification System
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+
+            // Icons based on type
+            let icon = '';
+            let bgColor = '';
+            let textColor = '';
+
+            if (type === 'success') {
+                bgColor = 'bg-white';
+                textColor = 'text-gray-800';
+                icon = `<svg class="w-6 h-6 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
+            } else if (type === 'error') {
+                bgColor = 'bg-white';
+                textColor = 'text-gray-800';
+                icon = `<svg class="w-6 h-6 text-red-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+            }
+
+            toast.className = `${bgColor} ${textColor} px-6 py-4 rounded-lg shadow-xl border-l-4 ${type === 'success' ? 'border-green-500' : 'border-red-500'} flex items-center transform transition-all duration-300 translate-x-full opacity-0 min-w-[300px]`;
+            toast.innerHTML = `
+                ${icon}
+                <div>
+                    <h4 class="font-bold text-sm">${type === 'success' ? 'Éxito' : 'Error'}</h4>
+                    <p class="text-sm opacity-90">${message}</p>
+                </div>
+            `;
+
+            container.appendChild(toast);
+
+            // Animate in
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-x-full', 'opacity-0');
+            });
+
+            // Remove after 5 seconds
+            setTimeout(() => {
+                toast.classList.add('translate-x-full', 'opacity-0');
+                setTimeout(() => {
+                    container.removeChild(toast);
+                }, 300);
+            }, 5000);
+        }
+
+        document.addEventListener('DOMContentLoaded', async function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            const ticketId = urlParams.get('ticket_id');
+            const clienteId = urlParams.get('cliente_id');
+            const token = '{{ access_token | safe }}';
+            const api_base_url = '{{ api_base_url | safe }}';
+
+            if (!ticketId || !clienteId) {
+                showToast('Error: Falta el ID del ticket o del cliente.', 'error');
+                return;
+            }
+
+            document.getElementById('ticket_id').value = ticketId;
+            document.getElementById('cliente_id').value = clienteId;
+            document.getElementById('header-ticket-id').textContent = `#${ticketId}`;
+
+            // Fetch Ticket Details for Context
+            try {
+                const response = await fetch(`${api_base_url}/api/cards/${ticketId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    const ticket = await response.json();
+                    document.getElementById('header-ticket-title').textContent = ticket.Name || 'Sin título';
+                    document.getElementById('header-client-name').textContent = `Cliente: ${ticket.CustName || ticket.CustCode || 'Desconocido'}`;
+
+                    // Pre-fill Summary with Ticket Title
+                    document.getElementById('titulo').value = ticket.Name || '';
+                } else {
+                    console.error('Failed to fetch ticket details');
+                    document.getElementById('header-ticket-title').textContent = 'Error al cargar detalles';
+                    showToast('No se pudieron cargar los detalles del ticket.', 'error');
+                }
+            } catch (error) {
+                console.error('Error fetching ticket details:', error);
+                showToast('Error de conexión al cargar el ticket.', 'error');
+            }
+
+            // Set today's date as default for date fields
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('start_date').value = today;
+            document.getElementById('end_date').value = today;
+
+            // Load projects with initial filters (Date filter disabled by default)
+            loadProjects(clienteId, null);
+
+            // Reload projects when date changes (only if filter is enabled)
+            document.getElementById('start_date').addEventListener('change', function () {
+                const filterEnabled = document.getElementById('filter_by_date').checked;
+                if (filterEnabled) {
+                    loadProjects(clienteId, this.value);
+                }
+            });
+
+            // Reload projects when filter checkbox changes
+            document.getElementById('filter_by_date').addEventListener('change', function () {
+                const date = document.getElementById('start_date').value;
+                if (this.checked) {
+                    loadProjects(clienteId, date);
+                } else {
+                    loadProjects(clienteId, null);
+                }
+            });
+
+            // Auto-fill End Date when Start Date changes
+            const startDateInput = document.getElementById('start_date');
+            const endDateInput = document.getElementById('end_date');
+
+            startDateInput.addEventListener('change', function () {
+                if (!endDateInput.value) {
+                    endDateInput.value = this.value;
+                }
+            });
+
+            // Initialize Flatpickr for Time Inputs (24h format)
+            flatpickr("#start_time_only", {
+                enableTime: true,
+                noCalendar: true,
+                dateFormat: "H:i",
+                time_24hr: true,
+                defaultDate: "09:00"
+            });
+
+            flatpickr("#end_time_only", {
+                enableTime: true,
+                noCalendar: true,
+                dateFormat: "H:i",
+                time_24hr: true,
+                defaultDate: "10:00"
+            });
+
+            // Load projects from API
+            async function loadProjects(clienteId, activeDate) {
+                try {
+                    // Build URL with query parameters
+                    let url = `${api_base_url}/api/proyectos/?`;
+                    if (clienteId) url += `cliente_id=${clienteId}&`;
+                    if (activeDate) url += `active_date=${activeDate}`;
+
+                    const response = await fetch(url, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+
+                    if (!response.ok) throw new Error('Failed to load projects');
+
+                    const projects = await response.json();
+                    const select = document.getElementById('proyecto_id');
+
+                    // Clear existing options except the first one
+                    select.innerHTML = '<option value="">Seleccione...</option>';
+
+                    if (projects.length === 0) {
+                        const option = document.createElement('option');
+                        option.text = "No hay proyectos activos para esta fecha";
+                        option.disabled = true;
+                        select.add(option);
+                    } else {
+                        projects.forEach(project => {
+                            const option = document.createElement('option');
+                            option.value = project.id;
+                            option.textContent = project.nombre;
+                            select.appendChild(option);
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error loading projects:', error);
+                    showToast('Error al cargar proyectos.', 'error');
+                }
+            }
+
+            document.getElementById('create-activity-form').addEventListener('submit', async function (event) {
+                event.preventDefault();
+
+                const form = event.target;
+
+                // Combine date and time fields
+                const startDate = form.elements.start_date.value;
+                const startTimeOnly = form.elements.start_time_only.value;
+                const endDate = form.elements.end_date.value;
+                const endTimeOnly = form.elements.end_time_only.value;
+
+                // Create start datetime
+                const startTime = new Date(`${startDate}T${startTimeOnly}`);
+
+                // Create end datetime
+                const endTime = new Date(`${endDate}T${endTimeOnly}`);
+
+                // Validate
+                if (endTime <= startTime) {
+                    showToast('La hora de fin debe ser posterior a la hora de inicio.', 'error');
+                    return;
+                }
+
+                const activityData = {
+                    titulo: form.elements.titulo.value,
+                    descripcion: form.elements.descripcion.value,
+                    hora_inicio: startTime.toISOString(),
+                    hora_fin: endTime.toISOString(),
+                    cliente_id: parseInt(form.elements.cliente_id.value),
+                    // Classification fields
+                    type_user: form.elements.type_user.value || null,
+                    activity_subtype: form.elements.activity_subtype.value || null,
+                    overtime: form.elements.overtime.checked ? 1.0 : 0.0,
+                    proyecto_id: form.elements.proyecto_id.value ? parseInt(form.elements.proyecto_id.value) : null,
+                    card_id: form.elements.ticket_id.value ? parseInt(form.elements.ticket_id.value) : null,
+                    update_ticket_additional_status: form.elements.is_additional_work.checked
+                };
+
+                const submitButton = document.querySelector('#create-activity-form button[type="submit"]');
+                const originalButtonText = submitButton.textContent;
+
+                try {
+                    submitButton.disabled = true;
+                    submitButton.textContent = 'Guardando...';
+                    submitButton.classList.add('opacity-50', 'cursor-not-allowed');
+
+                    const response = await fetch(`${api_base_url}/api/actividades/`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify(activityData)
+                    });
+
+                    if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(error.detail || 'Error al crear la actividad.');
+                    }
+
+                    showToast('Actividad creada y horas registradas con éxito.', 'success');
+
+                    // Delay redirect slightly to show toast
+                    setTimeout(() => {
+                        window.location.href = `/actividad?id=${form.elements.ticket_id.value}`;
+                    }, 1500);
+
+                } catch (error) {
+                    console.error('Error:', error);
+                    showToast(`Ocurrió un error: ${error.message}`, 'error');
+                } finally {
+                    submitButton.disabled = false;
+                    submitButton.textContent = originalButtonText;
+                    submitButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalle de Actividad - Flowdesk</title>
+
+    <script>
+        const token = '{{ access_token | safe }}';
+        const api_base_url = '{{ api_base_url | safe }}';
+    </script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #f3f4f6;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col">
+
+    <header
+        class="bg-white shadow-sm border-b border-gray-200 px-8 py-4 flex justify-between items-center sticky top-0 z-10">
+        <div class="flex items-center space-x-4">
+            <button onclick="window.history.back()" class="text-gray-500 hover:text-indigo-600 transition-colors">
+                <i class="fas fa-arrow-left text-xl"></i>
+            </button>
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800">
+                    Actividad <span id="activity-id-header" class="text-indigo-600">#...</span>
+                </h1>
+                <p class="text-sm text-gray-500">Detalle del registro de horas</p>
+            </div>
+        </div>
+        <a href="{{ url_for('logout') }}"
+            class="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Salir</span>
+        </a>
+    </header>
+
+    <main class="flex-grow container mx-auto px-6 py-8 max-w-5xl">
+
+        <div id="loading-message" class="flex flex-col items-center justify-center py-20 text-gray-500">
+            <i class="fas fa-spinner fa-spin text-4xl mb-4 text-indigo-500"></i>
+            <p>Cargando datos de la actividad...</p>
+        </div>
+
+        <div id="activity-details-container"
+            class="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden hidden">
+
+            <div class="bg-gray-50 px-8 py-4 border-b border-gray-100 flex justify-between items-center">
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-user-circle text-gray-400 text-xl"></i>
+                    <span class="text-sm font-medium text-gray-600">Realizado por:</span>
+                    <span id="activity-user" class="text-sm font-bold text-gray-900">--</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span class="text-sm font-medium text-gray-600">Duración:</span>
+                    <span id="activity-duracion"
+                        class="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-bold font-mono">--
+                        h</span>
+                </div>
+            </div>
+
+            <div class="p-8">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+                    <div class="md:col-span-1 space-y-6 border-r border-gray-100 pr-6">
+                        <div>
+                            <label
+                                class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Proyecto</label>
+                            <p id="activity-proyecto" class="text-lg font-semibold text-indigo-600">--</p>
+                        </div>
+
+                        <div>
+                            <label
+                                class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Fecha</label>
+                            <div class="flex items-center text-gray-800">
+                                <i class="far fa-calendar-alt mr-2 text-gray-400"></i>
+                                <p id="activity-fecha">--</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label
+                                    class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Inicio</label>
+                                <p id="activity-hora-inicio" class="font-mono text-gray-700">--:--</p>
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Fin</label>
+                                <p id="activity-hora-fin" class="font-mono text-gray-700">--:--</p>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Subtipo /
+                                Tarea</label>
+                            <p id="activity-subtype" class="text-gray-700">--</p>
+                        </div>
+                    </div>
+
+                    <div class="md:col-span-2 space-y-6 pl-2">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Título de
+                                la Actividad</label>
+                            <h2 id="activity-titulo" class="text-2xl font-bold text-gray-900 leading-tight">--</h2>
+                        </div>
+
+                        <div>
+                            <label
+                                class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Descripción
+                                Detallada</label>
+                            <div class="bg-gray-50 rounded-lg p-5 border border-gray-200">
+                                <p id="activity-descripcion"
+                                    class="text-gray-700 whitespace-pre-wrap leading-relaxed text-sm">--</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async function () {
+            // 1. Obtener ID de la URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const activityId = urlParams.get('id');
+
+            const detailsContainer = document.getElementById('activity-details-container');
+            const loadingMessage = document.getElementById('loading-message');
+
+            if (!activityId) {
+                loadingMessage.innerHTML = '<span class="text-red-500">Error: ID de actividad no proporcionado.</span>';
+                return;
+            }
+
+            document.getElementById('activity-id-header').textContent = `#${activityId}`;
+
+            try {
+                // 2. LLAMADA A LA API DE ACTIVIDADES (Correcta)
+                const response = await fetch(`${api_base_url}/api/actividades/${activityId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 404) throw new Error("Actividad no encontrada.");
+                    if (response.status === 403) throw new Error("No tienes permiso para ver esta actividad.");
+                    throw new Error("Error en el servidor.");
+                }
+
+                const activity = await response.json();
+
+                // 3. PINTAR LOS DATOS EN PANTALLA
+                // Campos de texto simples
+                document.getElementById('activity-user').textContent = activity.user || 'N/A';
+                document.getElementById('activity-proyecto').textContent = activity.proyecto_nombre || 'Sin Proyecto';
+                document.getElementById('activity-titulo').textContent = activity.titulo || '(Sin título)';
+                document.getElementById('activity-descripcion').textContent = activity.descripcion || 'Sin descripción disponible.';
+                document.getElementById('activity-subtype').textContent = activity.activity_subtype || activity.type_user || 'General';
+
+                // Formato de Fechas
+                if (activity.hora_inicio && activity.hora_fin) {
+                    const startDate = new Date(activity.hora_inicio);
+                    const endDate = new Date(activity.hora_fin);
+
+                    // Fecha
+                    document.getElementById('activity-fecha').textContent = startDate.toLocaleDateString('es-ES', {
+                        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+                    });
+
+                    // Horas
+                    document.getElementById('activity-hora-inicio').textContent = startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    document.getElementById('activity-hora-fin').textContent = endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+                    // Cálculo de duración visual
+                    const diffMs = endDate - startDate;
+                    const diffHrs = (diffMs / (1000 * 60 * 60)).toFixed(2);
+                    document.getElementById('activity-duracion').textContent = `${diffHrs} h`;
+                }
+
+                // Mostrar contenedor
+                loadingMessage.classList.add('hidden');
+                detailsContainer.classList.remove('hidden');
+
+            } catch (error) {
+                console.error('Error:', error);
+                loadingMessage.innerHTML = `
+                    <div class="text-center">
+                        <i class="fas fa-exclamation-circle text-red-500 text-3xl mb-2"></i>
+                        <p class="text-red-600 font-medium">${error.message}</p>
+                        <button onclick="window.history.back()" class="mt-4 text-indigo-600 hover:underline">Volver atrás</button>
+                    </div>
+                `;
+            }
+        });
+    </script>
+</body>
+
+</html>

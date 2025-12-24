@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galería de Clientes - Flowdesk</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradient {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        /* Glassmorphism */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+
+        .glass-sidebar {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            transition: all 0.3s ease;
+        }
+
+        .glass-card:hover {
+            background: rgba(255, 255, 255, 0.9);
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Form Elements */
+        .form-input {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus {
+            background: white;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+        }
+
+        /* Animations */
+        .fade-in-up {
+            animation: fadeInUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .delay-100 {
+            animation-delay: 0.1s;
+        }
+
+        .delay-200 {
+            animation-delay: 0.2s;
+        }
+    </style>
+</head>
+
+<body class="text-gray-800">
+    <div id="app" class="flex h-screen overflow-hidden">
+        <!-- Sidebar (Glass) -->
+        <aside id="sidebar"
+            class="glass-sidebar w-64 flex-shrink-0 flex flex-col transition-all duration-300 z-20 shadow-2xl">
+            <div class="h-20 flex items-center px-8 border-b border-white/10">
+                <div class="text-3xl font-bold text-white tracking-tight">
+                    Flow<span class="text-indigo-200">desk</span>
+                </div>
+            </div>
+
+            <nav class="flex-1 overflow-y-auto py-6 px-4 space-y-2">
+                <a href="{{ url_for('desk') }}"
+                    class="flex items-center px-4 py-3 rounded-xl text-white/80 hover:bg-white/10 hover:text-white transition-all group">
+                    <i class="fas fa-columns w-6 text-center group-hover:scale-110 transition-transform"></i>
+                    <span class="ml-3 font-medium">Tickets</span>
+                </a>
+                <a href="{{ url_for('mis_actividades') }}"
+                    class="flex items-center px-4 py-3 rounded-xl text-white/80 hover:bg-white/10 hover:text-white transition-all group">
+                    <i class="fas fa-tasks w-6 text-center group-hover:scale-110 transition-transform"></i>
+                    <span class="ml-3 font-medium">Mis Actividades</span>
+                </a>
+                <a href="{{ url_for('clientes_new') }}"
+                    class="flex items-center px-4 py-3 rounded-xl text-white/80 hover:bg-white/10 hover:text-white transition-all group">
+                    <i class="fas fa-users w-6 text-center group-hover:scale-110 transition-transform"></i>
+                    <span class="ml-3 font-medium">Usuarios</span>
+                </a>
+                <a href="{{ url_for('empresas') }}"
+                    class="flex items-center px-4 py-3 rounded-xl text-white/80 hover:bg-white/10 hover:text-white transition-all group">
+                    <i class="fas fa-building w-6 text-center group-hover:scale-110 transition-transform"></i>
+                    <span class="ml-3 font-medium">Clientes</span>
+                </a>
+                <a href="{{ url_for('actividad') }}"
+                    class="flex items-center px-4 py-3 rounded-xl text-white/80 hover:bg-white/10 hover:text-white transition-all group">
+                    <i class="fas fa-plus-circle w-6 text-center group-hover:scale-110 transition-transform"></i>
+                    <span class="ml-3 font-medium">Crear Ticket</span>
+                </a>
+                <a href="{{ url_for('reports') }}"
+                    class="flex items-center px-4 py-3 rounded-xl text-white/80 hover:bg-white/10 hover:text-white transition-all group">
+                    <i class="fas fa-chart-line w-6 text-center group-hover:scale-110 transition-transform"></i>
+                    <span class="ml-3 font-medium">Reportes</span>
+                </a>
+                <a href="{{ url_for('settings') }}"
+                    class="flex items-center px-4 py-3 rounded-xl text-white/80 hover:bg-white/10 hover:text-white transition-all group">
+                    <i class="fas fa-cog w-6 text-center group-hover:scale-110 transition-transform"></i>
+                    <span class="ml-3 font-medium">Ajustes</span>
+                </a>
+            </nav>
+
+            <!-- Footer -->
+            <div class="p-6 border-t border-white/10 bg-black/10">
+                <div id="sidebar-footer-content"
+                    class="h-10 flex items-center justify-center transition-opacity duration-500">
+                    <span class="text-lg font-bold text-white/60 tracking-wider">Flowdesk</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto p-4 md:p-8 relative z-10">
+            <!-- Header -->
+            <header class="flex flex-col md:flex-row justify-between items-center mb-8 fade-in-up gap-4">
+                <div>
+                    <h1 class="text-3xl font-bold text-white drop-shadow-md">Galería de Clientes</h1>
+                    <p class="text-white/80 mt-1 font-medium">Accede a los tickets de cada cliente</p>
+                </div>
+
+                <div class="flex items-center gap-4 w-full md:w-auto">
+                    <div class="relative w-full md:w-64">
+                        <input type="text" id="search-input" placeholder="Buscar cliente..."
+                            class="form-input block w-full pl-10 pr-4 py-2.5 rounded-xl text-sm focus:outline-none">
+                        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                    </div>
+
+                    <a href="{{ url_for('logout') }}"
+                        class="flex items-center space-x-2 px-4 py-2.5 bg-white/90 hover:bg-white text-indigo-600 rounded-xl shadow-lg hover:shadow-xl transition-all font-bold">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Salir</span>
+                    </a>
+                </div>
+            </header>
+
+            <!-- Gallery Grid -->
+            <div id="client-gallery"
+                class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 fade-in-up delay-100">
+                <div id="loading-message"
+                    class="col-span-full flex flex-col items-center justify-center py-20 text-white/60">
+                    <i class="fas fa-circle-notch fa-spin fa-3x mb-4"></i>
+                    <p class="font-medium text-white/80">Cargando clientes...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const api_base_url = '{{ api_base_url | safe }}';
+        const token = '{{ access_token | safe }}';
+
+        // Sidebar Footer Animation
+        document.addEventListener('DOMContentLoaded', function () {
+            const footerContent = document.getElementById('sidebar-footer-content');
+            if (!footerContent) return;
+
+            const items = [
+                '<span class="text-lg font-bold text-white/60 tracking-wider">Flowdesk</span>',
+                '<img src="{{ url_for("static", filename="img/innova_logo.png") }}" alt="Innova" class="h-8 object-contain opacity-60">',
+                '<img src="{{ url_for("static", filename="img/sap_logo.png") }}" alt="SAP" class="h-8 object-contain opacity-60">',
+                '<img src="{{ url_for("static", filename="img/odoo_logo.png") }}" alt="Odoo" class="h-8 object-contain opacity-60">',
+                '<img src="{{ url_for("static", filename="img/hexagon_logo.png") }}" alt="Hexagon" class="h-8 object-contain opacity-60">'
+            ];
+
+            let currentIndex = 0;
+            setInterval(() => {
+                footerContent.style.opacity = '0';
+                setTimeout(() => {
+                    currentIndex = (currentIndex + 1) % items.length;
+                    footerContent.innerHTML = items[currentIndex];
+                    footerContent.style.opacity = '1';
+                }, 500);
+            }, 3000);
+        });
+
+        document.addEventListener('DOMContentLoaded', async function () {
+            const clientGallery = document.getElementById('client-gallery');
+            const loadingMessage = document.getElementById('loading-message');
+
+            if (!token || token === 'None' || !token.length) {
+                window.location.href = "{{ url_for('login') }}";
+                return;
+            }
+
+            try {
+                const response = await fetch(`${api_base_url}/api/clientes/`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('No se pudieron cargar los clientes.');
+                }
+
+                const clientes = await response.json();
+
+                // Sort clients alphabetically
+                clientes.sort((a, b) => {
+                    const nameA = (a.nombre || a.razon_social || '').toLowerCase();
+                    const nameB = (b.nombre || b.razon_social || '').toLowerCase();
+                    return nameA.localeCompare(nameB);
+                });
+
+                if (clientes.length === 0) {
+                    loadingMessage.innerHTML = '<span class="text-lg font-medium text-white/80">No se encontraron clientes.</span>';
+                    return;
+                }
+
+                clientGallery.innerHTML = ''; // Clear loading message
+                // loadingMessage is inside clientGallery, so it's cleared.
+
+                for (const cliente of clientes) {
+                    // Determine status style
+                    let statusBorderClass = 'border-transparent';
+                    let statusBadge = '';
+
+                    if (cliente.has_rejected_tickets) {
+                        statusBorderClass = 'border-red-400';
+                        statusBadge = '<span class="absolute top-3 right-3 w-3 h-3 bg-red-500 rounded-full shadow-sm" title="Tickets Rechazados"></span>';
+                    } else if (cliente.has_pending_tickets) {
+                        statusBorderClass = 'border-blue-400';
+                        statusBadge = '<span class="absolute top-3 right-3 w-3 h-3 bg-blue-500 rounded-full shadow-sm" title="Tickets Pendientes"></span>';
+                    } else if (cliente.has_approved_tickets) {
+                        statusBorderClass = 'border-green-400';
+                        statusBadge = '<span class="absolute top-3 right-3 w-3 h-3 bg-green-500 rounded-full shadow-sm" title="Tickets Aprobados"></span>';
+                    }
+
+                    const card = document.createElement('a');
+                    card.href = `/ticket_cliente?cliente_code=${cliente.code}`;
+                    card.className = `glass-card rounded-2xl p-6 flex flex-col items-center text-center relative group border-l-4 ${statusBorderClass} hover:no-underline`;
+
+                    const initial = cliente.nombre ? cliente.nombre.charAt(0) : (cliente.razon_social ? cliente.razon_social.charAt(0) : '#');
+                    const displayName = cliente.nombre || cliente.razon_social || 'Cliente sin nombre';
+                    const displaySubName = cliente.nombre ? cliente.razon_social : '';
+
+                    // Generate a consistent gradient for the avatar
+                    const charCode = initial.charCodeAt(0);
+                    const gradients = [
+                        'from-indigo-500 to-purple-500',
+                        'from-blue-500 to-cyan-500',
+                        'from-emerald-500 to-teal-500',
+                        'from-rose-500 to-pink-500',
+                        'from-amber-500 to-orange-500'
+                    ];
+                    const gradientClass = gradients[charCode % gradients.length];
+
+                    card.innerHTML = `
+                        ${statusBadge}
+                        <div class="w-20 h-20 rounded-2xl bg-gradient-to-br ${gradientClass} flex items-center justify-center mb-5 shadow-lg shadow-indigo-500/20 group-hover:scale-110 transition-transform duration-300">
+                            <span class="text-3xl font-bold text-white">${initial}</span>
+                        </div>
+                        <h2 class="text-lg font-bold text-gray-800 mb-1 line-clamp-1 w-full" title="${displayName}">${displayName}</h2>
+                        <p class="text-sm text-gray-500 font-medium line-clamp-1 w-full h-5">${displaySubName}</p>
+                        
+                        <div class="mt-6 w-full pt-4 border-t border-gray-200/50 flex justify-between items-center text-xs text-gray-500 font-medium">
+                            <span>Código: ${cliente.code}</span>
+                            <span class="text-indigo-600 group-hover:translate-x-1 transition-transform">Ver Tickets &rarr;</span>
+                        </div>
+                    `;
+
+                    clientGallery.appendChild(card);
+                }
+
+                // Debounce function
+                function debounce(func, delay) {
+                    let timeout;
+                    return function (...args) {
+                        const context = this;
+                        clearTimeout(timeout);
+                        timeout = setTimeout(() => func.apply(context, args), delay);
+                    };
+                }
+
+                // Filter function
+                function filterClientCards() {
+                    const searchTerm = document.getElementById('search-input').value.toLowerCase();
+                    const clientCards = document.querySelectorAll('.glass-card');
+
+                    clientCards.forEach(card => {
+                        const clientName = card.querySelector('h2').textContent.toLowerCase();
+                        const clientSubName = card.querySelector('p').textContent.toLowerCase();
+
+                        if (clientName.includes(searchTerm) || clientSubName.includes(searchTerm)) {
+                            card.style.display = 'flex';
+                        } else {
+                            card.style.display = 'none';
+                        }
+                    });
+                }
+
+                // Add search functionality
+                const searchInput = document.getElementById('search-input');
+                searchInput.addEventListener('keyup', debounce(filterClientCards, 300));
+
+            } catch (error) {
+                console.error('Error fetching clients:', error);
+                loadingMessage.innerHTML = `<span class="text-white font-medium bg-red-500/50 px-4 py-2 rounded-lg">Error al cargar clientes: ${error.message}</span>`;
+            }
+        });
+    </script>
+</body>
+
+</html>

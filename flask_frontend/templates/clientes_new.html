@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Usuarios - Flowdesk</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/toast.css') }}">
+    <script src="{{ url_for('static', filename='js/toast.js') }}"></script>
+    <!-- Google Fonts: Outfit -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #f5f5f5;
+            min-height: 100vh;
+        }
+
+        .gradient-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .content-card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        }
+
+        .search-input {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            transition: all 0.2s ease;
+        }
+
+        .search-input:focus {
+            background: white;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            outline: none;
+        }
+
+        .table-header {
+            background: #f9fafb;
+        }
+
+        .table-row {
+            border-bottom: 1px solid #f3f4f6;
+            transition: all 0.2s ease;
+        }
+
+        .table-row:hover {
+            background-color: #f9fafb;
+        }
+
+        .badge-verified {
+            background: #10b981;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 0.75rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .badge-unverified {
+            background: #ef4444;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 0.75rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .autocomplete-items {
+            position: absolute;
+            border: 1px solid #e5e7eb;
+            z-index: 99;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            margin-top: 0.25rem;
+        }
+
+        .autocomplete-items div {
+            padding: 12px;
+            cursor: pointer;
+            background-color: white;
+            border-bottom: 1px solid #f3f4f6;
+            color: #374151;
+            transition: all 0.2s ease;
+        }
+
+        .autocomplete-items div:hover {
+            background: #f9fafb;
+        }
+
+        .autocomplete-active {
+            background: #f3f4f6 !important;
+        }
+
+        .btn-logout {
+            background: white;
+            color: #667eea;
+            transition: all 0.2s ease;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-logout:hover {
+            background: rgba(255, 255, 255, 0.9);
+            transform: translateY(-1px);
+        }
+
+        .btn-delete {
+            transition: all 0.2s ease;
+        }
+
+        .btn-delete:hover {
+            transform: scale(1.1);
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 56px;
+            height: 30px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #d1d5db;
+            transition: .3s;
+            border-radius: 30px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: #10b981;
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(26px);
+        }
+
+        select,
+        input[type="text"] {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            color: #374151;
+            transition: all 0.2s ease;
+        }
+
+        select:focus,
+        input[type="text"]:focus {
+            background: white;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            outline: none;
+        }
+
+        select option {
+            background: white;
+            color: #374151;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen">
+    <div id="app" class="min-h-screen">
+        <!-- Toast Notification Container -->
+        <div id="toast-container"></div>
+
+        <!-- Gradient Header -->
+        <div class="gradient-header py-8 px-6 mb-6">
+            <div class="w-full max-w-7xl mx-auto flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <button onclick="window.history.back()"
+                        class="text-white hover:text-gray-200 p-2 rounded-full transition duration-150">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                    </button>
+                    <div>
+                        <h1 class="text-3xl font-bold text-white">Gestión de Usuarios</h1>
+                        <p class="text-sm text-white text-opacity-90 mt-1">
+                            Administra los usuarios del sistema
+                        </p>
+                    </div>
+                </div>
+                <a href="{{ url_for('logout') }}"
+                    class="btn-logout flex items-center space-x-2 px-5 py-2.5 rounded-lg font-semibold">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Salir</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="w-full max-w-7xl mx-auto px-6 pb-6">
+            <main class="content-card p-6">
+                <div class="mb-6">
+                    <div class="relative">
+                        <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        <input type="text" id="searchInput" placeholder="Buscar por nombre de usuario..."
+                            class="search-input block w-full p-3 pl-12 rounded-lg">
+                    </div>
+                </div>
+                <div class="overflow-x-auto rounded-lg">
+                    <table class="min-w-full">
+                        <thead class="table-header">
+                            <tr>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                    ID
+                                </th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                    Roll
+                                </th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                    Nombre del Cliente
+                                </th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                    Gmail
+                                </th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                    Verificado
+                                </th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                    Estado
+                                </th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                    Acciones
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="clientes-table-body">
+                            <!-- User rows will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        const token = '{{ access_token | safe }}';
+        const api_base_url = '{{ api_base_url | safe }}';
+
+        function decodeJwt(token) {
+            try {
+                const base64Url = token.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
+                return JSON.parse(jsonPayload);
+            } catch (e) {
+                console.error("Failed to decode JWT:", e);
+                return null;
+            }
+        }
+
+        async function updateRoll(personId, newRoll) {
+            try {
+                const response = await fetch(`${api_base_url}/api/personas/${personId}/roll`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ roll: newRoll })
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        showToast('Sesión expirada. Por favor, inicie sesión de nuevo.', 'error');
+                        window.location.href = "{{ url_for('logout') }}";
+                        return;
+                    }
+                    const error = await response.json();
+                    showToast(`Error: ${error.detail}`, 'error');
+                } else {
+                    showToast('Rol actualizado correctamente.', 'success');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Ocurrió un error al actualizar el rol.', 'error');
+            }
+        }
+
+        async function updateStatus(personId, newStatus) {
+            try {
+                const response = await fetch(`${api_base_url}/api/personas/${personId}/status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ status: newStatus })
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        showToast('Sesión expirada. Por favor, inicie sesión de nuevo.', 'error');
+                        window.location.href = "{{ url_for('logout') }}";
+                        return;
+                    }
+                    const error = await response.json();
+                    showToast(`Error: ${error.detail}`, 'error');
+                } else {
+                    showToast('Estado actualizado correctamente.', 'success');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Ocurrió un error al actualizar el estado.', 'error');
+            }
+        }
+
+        async function updateCustomerName(personId, newCustomerName) {
+            try {
+                const response = await fetch(`${api_base_url}/api/personas/${personId}/customername`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ customername: newCustomerName })
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        showToast('Sesión expirada. Por favor, inicie sesión de nuevo.', 'error');
+                        window.location.href = "{{ url_for('logout') }}";
+                        return;
+                    }
+                    const error = await response.json();
+                    showToast(`Error: ${error.detail}`, 'error');
+                } else {
+                    showToast('Nombre del cliente actualizado correctamente.', 'success');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Ocurrió un error al actualizar el nombre del cliente.', 'error');
+            }
+        }
+
+        async function updateClienteId(personId, clienteId) {
+            try {
+                const response = await fetch(`${api_base_url}/api/personas/${personId}/cliente`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ cliente_id: clienteId })
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        showToast('Sesión expirada. Por favor, inicie sesión de nuevo.', 'error');
+                        window.location.href = "{{ url_for('logout') }}";
+                        return;
+                    }
+                    const error = await response.json();
+                    showToast(`Error: ${error.detail}`, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Ocurrió un error al actualizar el ID del cliente.', 'error');
+            }
+        }
+
+        async function deletePerson(personId) {
+            showConfirm('¿Estás seguro de que quieres eliminar a esta persona? Esta acción no se puede deshacer.',
+                async () => {
+                    try {
+                        const response = await fetch(`${api_base_url}/api/personas/${personId}`, {
+                            method: 'DELETE',
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+
+                        if (!response.ok) {
+                            if (response.status === 401) {
+                                showToast('Sesión expirada. Por favor, inicie sesión de nuevo.', 'error');
+                                window.location.href = "{{ url_for('logout') }}";
+                                return;
+                            }
+                            const error = await response.json();
+                            showToast(`Error al eliminar persona: ${error.detail}`, 'error');
+                        } else {
+                            showToast('Persona eliminada con éxito.', 'success');
+                            document.querySelector(`tr[data-person-id="${personId}"]`).remove();
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        showToast('Ocurrió un error al eliminar la persona.', 'error');
+                    }
+                }
+            );
+        }
+
+        // Autocomplete helper functions
+        function addActive(x) {
+            if (!x) return false;
+            removeActive(x);
+            if (currentActive >= x.length) currentActive = 0;
+            if (currentActive < 0) currentActive = (x.length - 1);
+            x[currentActive].classList.add("autocomplete-active");
+        }
+
+        function removeActive(x) {
+            for (let i = 0; i < x.length; i++) {
+                x[i].classList.remove("autocomplete-active");
+            }
+        }
+
+        function closeAllLists(elmnt) {
+            let x = document.getElementsByClassName("autocomplete-items");
+            for (let i = 0; i < x.length; i++) {
+                if (elmnt != x[i] && elmnt != currentAutocompleteInput) {
+                    x[i].parentNode.removeChild(x[i]);
+                }
+            }
+        }
+
+        let currentAutocompleteInput = null;
+        let currentAutocompleteItems = null;
+        let currentActive = -1;
+        let clientSearchTimeout = null;
+
+        function autocomplete(inp, arr, personId) {
+            currentAutocompleteInput = inp;
+            let currentFocus = -1;
+            closeAllLists();
+
+            let a = document.createElement("DIV");
+            a.setAttribute("id", inp.id + "autocomplete-list");
+            a.setAttribute("class", "autocomplete-items");
+            inp.parentNode.appendChild(a);
+
+            if (arr.length === 0) {
+                let noResults = document.createElement("DIV");
+                noResults.innerHTML = "No se encontraron resultados";
+                noResults.style.cursor = "default";
+                a.appendChild(noResults);
+                return;
+            }
+
+            for (let i = 0; i < arr.length; i++) {
+                const val = inp.value;
+                const clientName = arr[i].name;
+                const clientId = arr[i].id;
+
+                if (clientName.toUpperCase().includes(val.toUpperCase())) {
+                    let b = document.createElement("DIV");
+                    const matchIndex = clientName.toUpperCase().indexOf(val.toUpperCase());
+                    b.innerHTML = clientName.substring(0, matchIndex) + "<strong>" + clientName.substring(matchIndex, matchIndex + val.length) + "</strong>" + clientName.substring(matchIndex + val.length);
+                    b.innerHTML += "<input type='hidden' value='" + clientName + "'>";
+                    b.setAttribute('data-client-id', clientId);
+
+                    b.addEventListener("click", function (e) {
+                        const selectedClientName = this.getElementsByTagName("input")[0].value;
+                        const selectedClientId = this.getAttribute('data-client-id');
+                        inp.value = selectedClientName;
+                        updateCustomerName(personId, selectedClientName);
+                        updateClienteId(personId, selectedClientId);
+                        closeAllLists();
+                    });
+                    a.appendChild(b);
+                }
+            }
+
+            inp.removeEventListener("keydown", handleKeydown);
+            inp.addEventListener("keydown", handleKeydown);
+
+            function handleKeydown(e) {
+                let x = document.getElementById(inp.id + "autocomplete-list");
+                if (x) x = x.getElementsByTagName("div");
+                if (e.keyCode == 40) {
+                    currentFocus++;
+                    addActive(x);
+                } else if (e.keyCode == 38) {
+                    currentFocus--;
+                    addActive(x);
+                } else if (e.keyCode == 13) {
+                    e.preventDefault();
+                    if (currentFocus > -1) {
+                        if (x) x[currentFocus].click();
+                    }
+                }
+            }
+
+            document.addEventListener("click", function (e) {
+                closeAllLists(e.target);
+            });
+        }
+
+        async function fetchClientSuggestions(inputElement, personId) {
+            const query = inputElement.value;
+            if (query.length < 2) {
+                closeAllLists();
+                return;
+            }
+
+            try {
+                const response = await fetch(`${api_base_url}/api/clientes/search/?q=${encodeURIComponent(query)}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        showToast('Sesión expirada. Por favor, inicie sesión de nuevo.', 'error');
+                        window.location.href = "{{ url_for('logout') }}";
+                        return;
+                    }
+                    throw new Error('Failed to fetch client suggestions.');
+                }
+
+                const clients = await response.json();
+                const clientSuggestions = clients.map(client => ({ name: client.nombre || client.razon_social, id: client.id }));
+                autocomplete(inputElement, clientSuggestions, personId);
+            } catch (error) {
+                console.error('Error fetching client suggestions:', error);
+                closeAllLists();
+            }
+        }
+
+        function debounceClientSearch(inputElement, personId) {
+            clearTimeout(clientSearchTimeout);
+            clientSearchTimeout = setTimeout(() => fetchClientSuggestions(inputElement, personId), 300);
+        }
+
+        // Search functionality
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchInput = document.getElementById('searchInput');
+            searchInput.addEventListener('keyup', function () {
+                const filter = this.value.toLowerCase();
+                const rows = document.querySelectorAll('#clientes-table-body tr');
+
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    row.style.display = text.includes(filter) ? '' : 'none';
+                });
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!token || token === 'None' || token.length < 10) {
+                showToast('Error de autenticación: Token faltante. Por favor, inicie sesión de nuevo.', 'error');
+                window.location.href = "{{ url_for('login') }}";
+                return;
+            }
+
+            const decodedToken = decodeJwt(token);
+            const currentUserRoll = decodedToken ? decodedToken.roll : null;
+
+            try {
+                const response = await fetch(`${api_base_url}/api/personas/`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        showToast('Sesión expirada. Por favor, inicie sesión de nuevo.', 'error');
+                        window.location.href = "{{ url_for('logout') }}";
+                        return;
+                    }
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to fetch users.');
+                }
+
+                const users = await response.json();
+                const tbody = document.getElementById('clientes-table-body');
+                tbody.innerHTML = '';
+
+                if (users.length === 0) {
+                    tbody.innerHTML = '<tr class="table-row"><td colspan="7" class="text-center py-8 text-gray-500">No se encontraron usuarios.</td></tr>';
+                    return;
+                }
+
+                users.forEach(user => {
+                    const row = document.createElement('tr');
+                    row.classList.add('table-row');
+                    row.dataset.personId = user.id;
+                    let rollCellContent = '';
+                    let statusCellContent = '';
+                    let customerNameCellContent = '';
+                    let actionsCellContent = '';
+
+                    if (currentUserRoll === '1') {
+                        rollCellContent = `
+                            <select onchange="updateRoll(${user.id}, this.value)" class="block w-full p-2 rounded-lg font-medium text-sm">
+                                <option value="1" ${user.roll === '1' ? 'selected' : ''}>Administrador</option>
+                                <option value="2" ${user.roll === '2' ? 'selected' : ''}>Cliente</option>
+                                <option value="3" ${user.roll === '3' ? 'selected' : ''}>Developer/consultor</option>
+                                <option value="4" ${user.roll === '4' ? 'selected' : ''}>Gerente de Soporte</option>
+                            </select>
+                        `;
+                        statusCellContent = `
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="statusToggle-${user.id}" onchange="updateStatus(${user.id}, this.checked ? 1 : 0)" ${user.status === 1 ? 'checked' : ''}>
+                                <span class="slider"></span>
+                            </label>
+                        `;
+                        customerNameCellContent = `
+                            <div class="autocomplete" style="position: relative; width: 100%;">
+                                <input type="text" value="${user.customername || ''}" class="block w-full p-2 rounded-lg font-medium text-sm" oninput="debounceClientSearch(this, ${user.id})">
+                                <div class="autocomplete-items"></div>
+                            </div>
+                        `;
+                        actionsCellContent = `
+                            <button onclick="deletePerson(${user.id})" class="btn-delete text-red-500 hover:text-red-700 transition">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        `;
+                    } else {
+                        let rollDisplay = 'N/A';
+                        if (user.roll === '1') rollDisplay = 'Administrador';
+                        else if (user.roll === '2') rollDisplay = 'Cliente';
+                        else if (user.roll === '3') rollDisplay = 'Developer/consultor';
+
+                        rollCellContent = `<span class="text-gray-700 font-medium">${rollDisplay}</span>`;
+                        statusCellContent = user.status === 1
+                            ? '<span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">Activo</span>'
+                            : '<span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-semibold">Inactivo</span>';
+                        customerNameCellContent = `<span class="text-gray-700 font-medium">${user.customername || 'N/A'}</span>`;
+                        actionsCellContent = '<span class="text-gray-500">N/A</span>';
+                    }
+
+                    const verifiedBadge = user.is_verified
+                        ? '<span class="badge-verified"><i class="fas fa-check"></i> Verificado</span>'
+                        : '<span class="badge-unverified"><i class="fas fa-times"></i> No verificado</span>';
+
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">${user.id}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">${rollCellContent}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">${customerNameCellContent}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${user.gmail || 'N/A'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center">${verifiedBadge}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">${statusCellContent}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm">${actionsCellContent}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+
+            } catch (error) {
+                console.error('An unexpected error occurred:', error);
+                showToast('Ocurrió un error inesperado al cargar los datos.', 'error');
+            }
+        });
+    </script>
+</body>
+
+</html>

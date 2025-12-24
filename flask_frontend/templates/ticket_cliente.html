@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tickets del Cliente - Flowdesk</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradient {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        /* Glassmorphism */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+
+        .glass-sidebar {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            transition: all 0.3s ease;
+        }
+
+        .glass-card:hover {
+            background: rgba(255, 255, 255, 0.9);
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        /* Animations */
+        .fade-in-up {
+            animation: fadeInUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .delay-100 {
+            animation-delay: 0.1s;
+        }
+
+        .delay-200 {
+            animation-delay: 0.2s;
+        }
+    </style>
+</head>
+
+<body class="text-gray-800">
+    <div id="app" class="flex h-screen overflow-hidden">
+        <!-- Sidebar (Glass) -->
+        <aside id="sidebar"
+            class="glass-sidebar w-64 flex-shrink-0 flex flex-col transition-all duration-300 z-20 shadow-2xl">
+            <div class="h-20 flex items-center px-8 border-b border-white/10">
+                <div class="text-3xl font-bold text-white tracking-tight">
+                    Flow<span class="text-indigo-200">desk</span>
+                </div>
+            </div>
+
+            <nav class="flex-1 overflow-y-auto py-6 px-4 space-y-2">
+                <a href="{{ url_for('desk') }}"
+                    class="flex items-center px-4 py-3 rounded-xl text-white/80 hover:bg-white/10 hover:text-white transition-all group">
+                    <i class="fas fa-columns w-6 text-center group-hover:scale-110 transition-transform"></i>
+                    <span class="ml-3 font-medium">Tickets</span>
+                </a>
+                <a href="{{ url_for('mis_actividades') }}"
+                    class="flex items-center px-4 py-3 rounded-xl text-white/80 hover:bg-white/10 hover:text-white transition-all group">
+                    <i class="fas fa-tasks w-6 text-center group-hover:scale-110 transition-transform"></i>
+                    <span class="ml-3 font-medium">Mis Actividades</span>
+                </a>
+                <a href="{{ url_for('clientes_new') }}"
+                    class="flex items-center px-4 py-3 rounded-xl text-white/80 hover:bg-white/10 hover:text-white transition-all group">
+                    <i class="fas fa-users w-6 text-center group-hover:scale-110 transition-transform"></i>
+                    <span class="ml-3 font-medium">Usuarios</span>
+                </a>
+                <a href="{{ url_for('empresas') }}"
+                    class="flex items-center px-4 py-3 rounded-xl text-white/80 hover:bg-white/10 hover:text-white transition-all group">
+                    <i class="fas fa-building w-6 text-center group-hover:scale-110 transition-transform"></i>
+                    <span class="ml-3 font-medium">Clientes</span>
+                </a>
+                <a href="{{ url_for('actividad') }}"
+                    class="flex items-center px-4 py-3 rounded-xl text-white/80 hover:bg-white/10 hover:text-white transition-all group">
+                    <i class="fas fa-plus-circle w-6 text-center group-hover:scale-110 transition-transform"></i>
+                    <span class="ml-3 font-medium">Crear Ticket</span>
+                </a>
+                <a href="{{ url_for('reports') }}"
+                    class="flex items-center px-4 py-3 rounded-xl text-white/80 hover:bg-white/10 hover:text-white transition-all group">
+                    <i class="fas fa-chart-line w-6 text-center group-hover:scale-110 transition-transform"></i>
+                    <span class="ml-3 font-medium">Reportes</span>
+                </a>
+                <a href="{{ url_for('settings') }}"
+                    class="flex items-center px-4 py-3 rounded-xl text-white/80 hover:bg-white/10 hover:text-white transition-all group">
+                    <i class="fas fa-cog w-6 text-center group-hover:scale-110 transition-transform"></i>
+                    <span class="ml-3 font-medium">Ajustes</span>
+                </a>
+            </nav>
+
+            <!-- Footer -->
+            <div class="p-6 border-t border-white/10 bg-black/10">
+                <div id="sidebar-footer-content"
+                    class="h-10 flex items-center justify-center transition-opacity duration-500">
+                    <span class="text-lg font-bold text-white/60 tracking-wider">Flowdesk</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto p-4 md:p-8 relative z-10">
+            <!-- Header -->
+            <header class="flex flex-col md:flex-row justify-between items-center mb-8 fade-in-up gap-4">
+                <div>
+                    <h1 class="text-3xl font-bold text-white drop-shadow-md">Tickets de <span id="client-name"
+                            class="text-indigo-100"></span></h1>
+                    <p class="text-white/80 mt-1 font-medium">Gestión de tickets asociados al cliente</p>
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <a href="{{ url_for('gallery') }}"
+                        class="flex items-center space-x-2 px-4 py-2.5 bg-white/20 hover:bg-white/30 text-white rounded-xl border border-white/10 transition-all shadow-lg backdrop-blur-sm">
+                        <i class="fas fa-arrow-left"></i>
+                        <span class="font-medium">Volver a Galería</span>
+                    </a>
+                </div>
+            </header>
+
+            <!-- Ticket Gallery Grid -->
+            <div id="ticket-gallery"
+                class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 fade-in-up delay-100">
+                <!-- Ticket cards will be inserted here -->
+                <div id="loading-message"
+                    class="col-span-full flex flex-col items-center justify-center py-20 text-white/60">
+                    <i class="fas fa-circle-notch fa-spin fa-3x mb-4"></i>
+                    <p class="font-medium text-white/80">Cargando tickets...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const api_base_url = '{{ api_base_url | safe }}';
+        const token = '{{ access_token | safe }}';
+        const clienteCode = '{{ cliente_code | safe }}';
+
+        // Sidebar Footer Animation
+        document.addEventListener('DOMContentLoaded', function () {
+            const footerContent = document.getElementById('sidebar-footer-content');
+            if (!footerContent) return;
+
+            const items = [
+                '<span class="text-lg font-bold text-white/60 tracking-wider">Flowdesk</span>',
+                '<img src="{{ url_for("static", filename="img/innova_logo.png") }}" alt="Innova" class="h-8 object-contain opacity-60">',
+                '<img src="{{ url_for("static", filename="img/sap_logo.png") }}" alt="SAP" class="h-8 object-contain opacity-60">',
+                '<img src="{{ url_for("static", filename="img/odoo_logo.png") }}" alt="Odoo" class="h-8 object-contain opacity-60">',
+                '<img src="{{ url_for("static", filename="img/hexagon_logo.png") }}" alt="Hexagon" class="h-8 object-contain opacity-60">'
+            ];
+
+            let currentIndex = 0;
+            setInterval(() => {
+                footerContent.style.opacity = '0';
+                setTimeout(() => {
+                    currentIndex = (currentIndex + 1) % items.length;
+                    footerContent.innerHTML = items[currentIndex];
+                    footerContent.style.opacity = '1';
+                }, 500);
+            }, 3000);
+        });
+
+        document.addEventListener('DOMContentLoaded', async function () {
+            const clientNameSpan = document.getElementById('client-name');
+            const ticketGallery = document.getElementById('ticket-gallery');
+            const loadingMessage = document.getElementById('loading-message');
+
+            // Display client code initially
+            clientNameSpan.textContent = clienteCode;
+
+            // Fetch tickets for the client
+            try {
+                const response = await fetch(`${api_base_url}/api/cards/?CustCode=${clienteCode}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('No se pudieron cargar los tickets.');
+                }
+
+                const tickets = await response.json();
+
+                if (tickets.length === 0) {
+                    loadingMessage.innerHTML = '<span class="text-lg font-medium text-white/80">Este cliente no tiene tickets.</span>';
+                    return;
+                }
+
+                ticketGallery.innerHTML = ''; // Clear loading message
+
+                tickets.forEach(ticket => {
+                    const card = document.createElement('a');
+                    card.href = `/actividad?id=${ticket.internalId}`;
+
+                    // Determine status styles for Glass UI
+                    let statusColorClass = 'bg-gray-500/20 text-gray-200 border-gray-500/30'; // Default
+                    let cardBorderClass = 'border-l-4 border-transparent';
+
+                    switch (ticket.AdditionalHoursStatus) {
+                        case 'Aprobado':
+                            statusColorClass = 'bg-green-500/20 text-green-200 border-green-500/30';
+                            cardBorderClass = 'border-l-4 border-green-400';
+                            break;
+                        case 'Pendiente de Aprobacion':
+                            statusColorClass = 'bg-blue-500/20 text-blue-200 border-blue-500/30';
+                            cardBorderClass = 'border-l-4 border-blue-400';
+                            break;
+                        case 'Rechazado':
+                            statusColorClass = 'bg-red-500/20 text-red-200 border-red-500/30';
+                            cardBorderClass = 'border-l-4 border-red-400';
+                            break;
+                    }
+
+                    card.className = `glass-card rounded-2xl p-5 flex flex-col justify-between group hover:no-underline ${cardBorderClass}`;
+
+                    card.innerHTML = `
+                        <div>
+                            <div class="flex justify-between items-center mb-3">
+                                <span class="text-sm font-bold text-indigo-100 bg-indigo-500/20 px-2 py-1 rounded-lg border border-indigo-500/30">#${ticket.internalId}</span>
+                                <span class="px-2 py-1 text-xs font-semibold rounded-full border ${statusColorClass}">${ticket.State || 'N/A'}</span>
+                            </div>
+                            <h3 class="text-lg font-bold text-gray-800 mb-2 leading-tight group-hover:text-indigo-700 transition-colors">${ticket.Name || 'Sin Título'}</h3>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-gray-200/50 flex justify-between items-center text-sm">
+                            <span class="text-gray-500 font-medium">Prioridad: <span class="text-gray-700 font-bold">${ticket.Priority || 'N/A'}</span></span>
+                            <i class="fas fa-chevron-right text-gray-400 group-hover:text-indigo-600 transition-transform group-hover:translate-x-1"></i>
+                        </div>
+                    `;
+
+                    ticketGallery.appendChild(card);
+                });
+
+            } catch (error) {
+                console.error('Error fetching tickets:', error);
+                loadingMessage.innerHTML = `<span class="text-white font-medium bg-red-500/50 px-4 py-2 rounded-lg">Error al cargar tickets: ${error.message}</span>`;
+            }
+        });
+    </script>
+</body>
+
+</html>
